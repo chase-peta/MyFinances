@@ -1,0 +1,55 @@
+﻿@model IEnumerable<MyFinances.Models.Loan>
+
+@{ ViewBag.Title = "Loans"; }
+
+<div class="clear-after">
+    <div class="pull-right">
+        @Html.ActionLink("Add Loan", "Create", null, new { @class = "btn btn-primary" })
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+        <div class="tab-content">
+            <div class="table-container">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>@Html.DisplayNameFor(m => m.Name)</th>
+                            <th class="text-right">@Html.DisplayNameFor(m => m.Principal)</th>
+                            <th>@Html.DisplayNameFor(m => m.PaymentsRemaining)</th>
+                            <th>@Html.DisplayNameFor(m => m.DueDate)</th>
+                            <th class="text-right">@Html.DisplayNameFor(m => m.MonthlyPayment)</th>
+                            <th>@Html.DisplayNameFor(m => m.DueIn)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (MyFinances.Models.Loan item in Model)
+                        {
+                            <tr class="@item.Classes">
+                                <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", new { ID = item.ID })</th>
+                                <td class="text-right">@Html.DisplayFor(m => item.Principal)</td>
+                                <td>@Html.DisplayFor(m => item.PaymentsRemaining)</td>
+                                <td>@item.DueDate.ToString("MMMM - dd")</td>
+                                <td class="text-right">@Html.DisplayFor(m => item.MonthlyPayment)</td>
+                                <td>@Html.DisplayFor(m => item.DueIn)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="clearfix text-right margin-top-20">
+            @if (ViewBag.ShowInactive)
+            {
+                @Html.ActionLink("Hide Inactive", "Index", null, new { @class = "btn btn-primary" })
+            }
+            else
+            {
+                @Html.ActionLink("Show Inactive", "Index", new { showInactive = true }, new { @class = "btn btn-primary" })
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,66 @@
+﻿@model IEnumerable<MyFinances.Models.Bill>
+
+@{ ViewBag.Title = "Bills"; }
+
+<div class="clear-after">
+    <div class="pull-right">
+        @Html.ActionLink("Add Bill", "Create", null, new { @class = "btn btn-primary" })
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+        @if (Model.Any())
+        {
+            <div class="tab-content">
+                <div class="table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>@Html.DisplayNameFor(m => m.Name)</th>
+                                <th>@Html.DisplayNameFor(m => m.Payee)</th>
+                                <th class="text-right">@Html.DisplayNameFor(m => m.Amount)</th>
+                                <th>@Html.DisplayNameFor(m => m.DueDate)</th>
+                                <th></th>
+                                <th>@Html.DisplayNameFor(m => m.DueIn)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (MyFinances.Models.Bill item in Model)
+                            {
+                                <tr class="@item.Classes">
+                                    <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", new { ID = item.ID })</th>
+                                    <td>@Html.DisplayFor(m => item.Payee)</td>
+                                    <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
+                                    <td>@item.DueDate.ToString("MMMM - dd")</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            @Html.ActionLink("Paid", "Paid", new { id = item.ID, r = "Index" })
+                                        }
+                                    </td>
+                                    <td>@Html.DisplayFor(m => item.DueIn)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="clearfix text-right margin-top-20">
+                @if (ViewBag.ShowInactive)
+                {
+                    @Html.ActionLink("Hide Inactive", "Index", null, new { @class = "btn btn-primary" })
+                }
+                else
+                {
+                    @Html.ActionLink("Show Inactive", "Index", new { showInactive = true }, new { @class = "btn btn-primary" })
+                }
+            </div>
+        } else
+        {
+            <p>You currently don't have any bills to show. You can @Html.ActionLink("add a bill", "Create").</p>
+        }
+    </div>
+</div>

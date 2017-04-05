@@ -1,0 +1,78 @@
+﻿@model MyFinances.Models.ApplicationUser
+
+@{
+    ViewBag.Title = "Update Profile";
+}
+
+<h1>@ViewBag.Title</h1>
+
+
+<div class="row">
+    <div class="col-xs-12 col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+
+        <div class="update-form standard margin-bottom-20">
+            @using (Html.BeginForm("UpdateProfile", "Manage", FormMethod.Post, new { role = "form" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary("", new { @class = "text-danger" })
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FirstName, new { htmlAttributes = new { @class = "control-label" } })
+                    @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.FirstName)
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.LastName, new { htmlAttributes = new { @class = "control-label" } })
+                    @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.LastName)
+                </div>
+
+                <p>These dates are just used to determine the day of the month or figure out where to start for weekly or biweekly. Below is a breakdown of what is used for each payment frequency:</p>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.PaycheckFrequency, new { htmlAttributes = new { @class = "control-label" } })
+                    @Html.EnumDropDownListFor(model => model.PaycheckFrequency, "Select Payment Frequency", new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.PaycheckFrequency)
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-xs-12 col-sm-6">
+                        @Html.LabelFor(model => model.FirstDate, new { htmlAttributes = new { @class = "control-label" } })
+                        @Html.EditorFor(model => model.FirstDate, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.FirstDate)
+                        <ul>
+                            <li><strong>Weekly:</strong> Every 7 Days</li>
+                            <li><strong>BiWeekly:</strong> Every 14 Days</li>
+                            <li><strong>SemiMonthly:</strong> First Payday of Month</li>
+                            <li><strong>Monthly:</strong> Only Payday of Month</li>
+                            <li><strong>BiMonthly:</strong> Payday of Month</li>
+                            <li><strong>SemiYearly:</strong> Every 6 Months</li>
+                            <li><strong>Yearly:</strong> Once a Year</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group col-xs-12 col-sm-6">
+                        @Html.LabelFor(model => model.SecondDate, new { htmlAttributes = new { @class = "control-label" } })
+                        @Html.EditorFor(model => model.SecondDate, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.SecondDate)
+                        <ul>
+                            <li><strong>Weekly:</strong> Not Used</li>
+                            <li><strong>BiWeekly:</strong> Not Used</li>
+                            <li><strong>SemiMonthly:</strong> Second Payday of Month</li>
+                            <li><strong>Monthly:</strong> Not Used</li>
+                            <li><strong>BiMonthly:</strong> Not Used</li>
+                            <li><strong>SemiYearly:</strong> Not Used</li>
+                            <li><strong>Yearly:</strong> Not Used</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="form-group text-center">
+                    <input type="submit" name="button" value="Save" class="btn btn-primary" />
+                </div>
+            }
+        </div>
+
+    </div>
+</div>

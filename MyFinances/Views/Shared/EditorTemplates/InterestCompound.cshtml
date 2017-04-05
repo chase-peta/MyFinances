@@ -1,0 +1,7 @@
+﻿@model Enum
+@Html.DropDownListFor(x => x, Enum.GetValues(Model.GetType()))
+@foreach (var value in Enum.GetValues(Model.GetType()))
+{
+    @Html.RadioButtonFor(m => m, value)
+    @Html.Label(value.ToString())
+}

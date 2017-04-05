@@ -1,24 +1,151 @@
-﻿body {
-    padding-top: 50px;
+﻿/* Layout */
+body {
     padding-bottom: 20px;
 }
 
-/* Set padding to keep content from hitting the edges */
-.body-content {
+.container-fluid {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+main .container-fluid,
+footer .container-fluid {
     padding-left: 15px;
     padding-right: 15px;
 }
 
-/* Override the default bootstrap behavior where horizontal description lists 
-   will truncate terms that are too long to fit in the left column 
-*/
-.dl-horizontal dt {
-    white-space: normal;
+footer {
+    margin-top: 40px;
+    height: auto;
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
-/* Set width on the form input elements since they're 100% wide by default */
-input,
-select,
-textarea {
-    max-width: 280px;
+footer p {
+    margin: 0;
+}
+
+.navbar-inverse {
+    color: #999;
+    box-shadow: 0 0px 10px 5px rgba(0,0,0,.5);
+}
+
+.navbar {
+    border-radius: 0;
+}
+/* End Layout */
+
+/* Misc */
+.margin-bottom-20 {
+    margin-bottom: 20px;
+}
+.margin-top-20 {
+    margin-top: 20px;
+}
+.panel-primary {
+    border-color: #080808;
+}
+.panel-primary > .panel-heading {
+    background-color: #222222;
+    border-color: #080808;
+}
+.panel-heading h3 {
+    margin: 2px 0 0 0;
+}
+.panel-heading {
+    padding-bottom: 0;
+}
+.panel-heading .nav-tabs > li > a,
+.panel-heading .nav-tabs > li > a:hover,
+.panel-heading .nav-tabs > li > a:focus {
+    border-bottom-width: 0;
+}
+.panel .tab-content {
+    border: 0;
+}
+
+.btn {
+    margin-right: 10px;
+}
+.text-right .btn {
+    margin-left: 10px;
+    margin-right: 0;
+}
+.pull-left.btn {
+    margin-left: 0;
+    margin-right: 10px;
+}
+.pull-right.btn {
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+.update-form {
+    padding: 20px;
+    border-width: 2px;
+    border-radius: 5px;
+    border-style: solid;
+}
+.update-form.standard {
+    border-color: #999999;
+    background: rgba(0, 0, 0, .075);
+}
+.update-form.alert-info {
+    border-color: #3a87ad;
+}
+
+.nav-tabs {
+    border-bottom: 0;
+    margin: 0;
+}
+
+.tab-content {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+/* End Misc */
+.table-container {
+    overflow-x: auto;
+}
+.table {
+    margin-bottom: 0;
+}
+
+.table > tbody > tr:nth-child(odd) > td,
+.table > tbody > tr:nth-child(odd) > th {
+    background-color: rgba(0,0,0,0.075);
+}
+
+.table tbody > tr > th, 
+.table tbody > tr > td {
+    border: 0;
+}
+
+.table > tbody > tr.alert-info th, 
+.table > tbody > tr.alert-info td {
+    border-top-width: 2px;
+    border-top-style: solid;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+    font-style: italic;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.table > tbody > tr.next-payment th, 
+.table > tbody > tr.next-payment td {
+    border-top-width: 2px;
+    border-top-style: solid;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+}
+
+.table > tbody > tr.not-active {
+    background-color: #ddd;
+    color: #000;
+}
+.table > tbody > tr.not-active a {
+    color: #000;
 }
