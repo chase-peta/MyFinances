@@ -75,7 +75,7 @@ $(function () {
             .focus(function () { $(this).select(); });
     }
 
-    $(".pagination a").click(function (e) {
+    $(".tab-pane .pagination a").click(function (e) {
         e.preventDefault();
         $(this).closest(".pagination").find("li").removeClass("active");
         $(this).parent("li").addClass("active");
@@ -85,7 +85,27 @@ $(function () {
             $(this).closest(".tab-pane").find("table tbody tr:not([data-year='" + selectedYear + "'])").addClass("hide");
         }
     })
-    $(".pagination li:first-child a").click();
+    $(".tab-pane .pagination li:first-child a").click();
+
+    var $paymentFrequency = $("#PaymentFrequency"),
+        $datePaidCheckbox = $("#IsDueDateStaysSame"),
+        $amountCheckbox = $("#IsAmountStaysSame"),
+        $explain = $("#explain");
+
+    if ($paymentFrequency.length && $datePaidCheckbox.length && $amountCheckbox.length) {
+        $paymentFrequency.on("change", function () {
+            var value = $(this).val();
+            if (value >= 3) {
+                $datePaidCheckbox.removeAttr("disabled").parent().removeClass("disabled");
+                $amountCheckbox.removeAttr("disabled").parent().removeClass("disabled");
+                $explain.addClass("hide");
+            } else {
+                $datePaidCheckbox.attr({disabled: true, checked: true}).parent().addClass("disabled");
+                $amountCheckbox.attr({ disabled: true, checked: true }).parent().addClass("disabled");
+                $explain.removeClass("hide");
+            }
+        }).trigger("change");
+    }
 
     $("[data-toggle=\"tooltip\"]").tooltip();
     $(".confirmation").confirmModal();

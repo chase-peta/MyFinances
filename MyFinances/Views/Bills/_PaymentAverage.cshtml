@@ -43,7 +43,7 @@
                                 {
                                     foreach (var item in Model.BillPayments.OrderBy(x => x.DatePaid))
                                     {
-                                        <tr class="@(Model.IsActive && Model.LastPaymentDate == item.DatePaid ? "alert-success" : "") hide" id="BillPayment-@item.ID" data-year="@item.DatePaid.Year">
+                                        <tr class="@(Model.IsActive && Model.LastPaymentDate == item.DatePaid ? "alert-success with-border" : "") hide" id="BillPayment-@item.ID" data-year="@item.DatePaid.Year">
                                             <th>@Html.ActionLink(item.DatePaid.ToString("MMMM - dd"), "EditPayment", new { ID = item.ID }, new { @class = "datePaid" })</th>
                                             <td><span class="payee">@Html.DisplayFor(m => item.Payee)</span></td>
                                             <td></td>

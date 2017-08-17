@@ -1,6 +1,6 @@
 ﻿/* Layout */
 body {
-    padding-bottom: 20px;
+    background-color: #ddd;
 }
 
 .container-fluid {
@@ -19,6 +19,7 @@ footer {
     height: auto;
     padding-top: 20px;
     padding-bottom: 20px;
+    margin-bottom: 0 !important;
 }
 
 footer p {
@@ -44,6 +45,13 @@ footer p {
 }
 .panel-primary {
     border-color: #080808;
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.panel-primary:hover {
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 1);
+    opacity: 1;
 }
 .panel-primary > .panel-heading {
     background-color: #222222;
@@ -103,6 +111,7 @@ footer p {
     border: 1px solid #ddd;
     border-radius: 5px;
     overflow: hidden;
+    background-color: #fff;
 }
 
 /* End Misc */
@@ -125,17 +134,17 @@ footer p {
 
 .table > tbody > tr.alert-info th, 
 .table > tbody > tr.alert-info td {
-    border-top-width: 2px;
-    border-top-style: solid;
-    border-bottom-width: 2px;
-    border-bottom-style: solid;
     font-style: italic;
     font-weight: bold;
     font-size: 1.2em;
 }
 
+.table > tbody > tr.alert-info th, 
+.table > tbody > tr.alert-info td,
 .table > tbody > tr.next-payment th, 
-.table > tbody > tr.next-payment td {
+.table > tbody > tr.next-payment td, 
+.table > tbody > tr.alert-success.with-border th, 
+.table > tbody > tr.alert-success.with-border td {
     border-top-width: 2px;
     border-top-style: solid;
     border-bottom-width: 2px;

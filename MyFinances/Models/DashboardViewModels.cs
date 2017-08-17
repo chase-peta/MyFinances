@@ -138,10 +138,10 @@ namespace MyFinances.Models
             EndDate = endDate;
         }
 
-        [Display(Name = "Start Date"), DisplayFormat(DataFormatString = "{0:MMMM dd}")]
+        [Display(Name = "Start Date"), DisplayFormat(DataFormatString = "{0:MMM. d}")]
         public DateTime StartDate { get; set; }
 
-        [Display(Name = "End Date"), DisplayFormat(DataFormatString = "{0:dd}")]
+        [Display(Name = "End Date"), DisplayFormat(DataFormatString = "{0:MMM. d}")]
         public DateTime EndDate { get; set; }
 
         [Display(Name = "Total"), DisplayFormat(DataFormatString = "{0:c}")]

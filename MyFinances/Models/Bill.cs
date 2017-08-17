@@ -83,6 +83,39 @@ namespace MyFinances.Models
             return newBills;
         }
 
+        public static List<DashboardItem> GetDashboardItems (this IEnumerable<Bill> bills, DashboardDateRange range, ApplicationUser user)
+        {
+            List<DashboardItem> items = new List<DashboardItem>();
+            foreach (Bill bill in bills)
+            {
+                if (bill.DueDate >= range.StartDate && bill.DueDate <= range.EndDate)
+                {
+                    items.Add(new DashboardItem(bill));
+                }
+
+                DateTime date = bill.DueDate;
+                while (date <= range.EndDate)
+                {
+                    Tuple<DateTime, decimal> newDateAmount = bill.GetDateAmount(bill.GetNextDate(date, user),  bill.Amount);
+                    date = newDateAmount.Item1;
+                    if (newDateAmount.Item1 >= range.StartDate && date <= range.EndDate)
+                    {
+                        DashboardItem item = new DashboardItem(bill);
+                        item.Date = date;
+                        item.Amount = newDateAmount.Item2;
+                        items.Add(item);
+                    }
+                }
+
+                if (bill.BillPayments.Any())
+                {
+                    items.AddRange(bill.BillPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x)));
+                }
+            }
+
+            return items;
+        }
+
         public static Bill Populate(this Bill bill)
         {
             if (bill.BillPayments != null && bill.BillPayments.Any())
@@ -120,6 +153,75 @@ namespace MyFinances.Models
             bill.IsShared = b.IsShared;
             bill.PaymentFrequency = b.PaymentFrequency;
             return bill;
+        }
+
+        public static Tuple<DateTime, decimal> GetDateAmount(this Bill bill, DateTime date, decimal amount)
+        {
+            if ((!bill.IsDueDateStaysSame || !bill.IsAmountStaysSame) && bill.PaymentFrequency >= PaymentFrequency.Monthly && bill.BillPayments.Any())
+            {
+                IEnumerable<BillPayment> bp = bill.BillPayments.Where(x => x.DatePaid.Month == date.Month);
+                if (bp.Count() == 0)
+                {
+                    IEnumerable<BillPayment> orderBp = bill.BillPayments.OrderBy(x => x.DatePaid);
+                    bp = orderBp.Skip(Math.Max(0, orderBp.Count() - 4));
+                }
+                if (bp.Count() > 1)
+                {
+                    if (!bill.IsDueDateStaysSame)
+                    {
+                        date = new DateTime(date.Year, date.Month, Convert.ToInt16(bp.Average(x => x.DatePaid.Day)));
+                    }
+                    if (!bill.IsAmountStaysSame)
+                    {
+                        amount = bp.Average(x => x.Amount);
+                    }
+                }
+            }
+            
+            return Tuple.Create(date, amount);
+        }
+
+        public static DateTime GetNextDate (this Bill bill, DateTime date, ApplicationUser user)
+        {
+            switch (bill.PaymentFrequency)
+            {
+                case PaymentFrequency.Weekly:
+                    date = date.AddDays(7);
+                    break;
+                case PaymentFrequency.BiWeekly:
+                    date = date.AddDays(14);
+                    break;
+                case PaymentFrequency.SemiMonthly:
+                    DateTime fDate = new DateTime(date.Year, date.Month, user.FirstDate.Day);
+                    DateTime sDate = new DateTime(date.Year, date.Month, user.SecondDate.Day);
+                    if (date == fDate)
+                    {
+                        date = sDate;
+                    } else if (date == sDate)
+                    {
+                        date = fDate.AddMonths(1);
+                    } else if (date < sDate)
+                    {
+                        date = sDate.AddDays((date - fDate).Days);
+                    } else
+                    {
+                        date = fDate.AddMonths(1).AddDays((date - sDate).Days);
+                    }
+                    break;
+                case PaymentFrequency.Monthly:
+                    date = date.AddMonths(1);
+                    break;
+                case PaymentFrequency.BiMonthly:
+                    date = date.AddMonths(2);
+                    break;
+                case PaymentFrequency.SemiYearly:
+                    date = date.AddMonths(6);
+                    break;
+                case PaymentFrequency.Yearly:
+                    date = date.AddYears(1);
+                    break;
+            }
+            return date;
         }
 
         private static string GetDueIn (bool isActive, bool isPastDue, double dueInDays)

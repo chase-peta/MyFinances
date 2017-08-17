@@ -31,57 +31,58 @@
 
                             <div class="row">
                                 <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Name, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.LabelFor(model => model.Name, new { @class = "control-label" })
                                     @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
                                     @Html.ValidationMessageFor(model => model.Name)
                                 </div>
 
                                 <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Payee, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.LabelFor(model => model.Payee, new { @class = "control-label" })
                                     @Html.EditorFor(model => model.Payee, new { htmlAttributes = new { @class = "form-control" } })
                                     @Html.ValidationMessageFor(model => model.Payee)
                                 </div>
                                 <div class="clearfix"></div>
 
+                                <div class="form-group col-xs-12">
+                                    @Html.LabelFor(model => model.PaymentFrequency,new { @class = "control-label" })
+                                    @Html.EnumDropDownListFor(model => model.PaymentFrequency, "Select Payment Frequency", new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(model => model.PaymentFrequency)
+                                </div>
+                                <div class="clearfix"></div>
+
                                 <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.DueDate, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.LabelFor(model => model.DueDate, new { @class = "control-label" })
                                     @Html.EditorFor(model => model.DueDate, new { htmlAttributes = new { @class = "form-control" } })
                                     @Html.ValidationMessageFor(model => model.DueDate)
 
                                     <div class="form-check text-center">
                                         @Html.EditorFor(model => model.IsDueDateStaysSame, new { htmlAttributes = new { @class = "form-check-input" } })
-                                        @Html.LabelFor(model => model.IsDueDateStaysSame, new { htmlAttributes = new { @class = "form-check-label" } })
+                                        @Html.LabelFor(model => model.IsDueDateStaysSame, new { @class = "form-check-label" } )
                                         @Html.ValidationMessageFor(model => model.IsDueDateStaysSame)
                                     </div>
                                 </div>
 
                                 <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Amount, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.LabelFor(model => model.Amount, new { @class = "control-label" })
                                     @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control" } })
                                     @Html.ValidationMessageFor(model => model.Amount)
 
                                     <div class="form-check text-center">
                                         @Html.EditorFor(model => model.IsAmountStaysSame, new { htmlAttributes = new { @class = "form-check-input" } })
-                                        @Html.LabelFor(model => model.IsAmountStaysSame, new { htmlAttributes = new { @class = "form-check-label" } })
+                                        @Html.LabelFor(model => model.IsAmountStaysSame, new { @class = "form-check-label" })
                                         @Html.ValidationMessageFor(model => model.IsAmountStaysSame)
                                     </div>
                                 </div>
                                 <div class="clearfix"></div>
 
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.PaymentFrequency, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EnumDropDownListFor(model => model.PaymentFrequency, "Select Payment Frequency", new { @class = "form-control" })
-                                    @Html.ValidationMessageFor(model => model.PaymentFrequency)
-                                </div>
+                                <div class="col-xs-12 hide" id="explain">Check Boxes disable because Weekly, BiWeekly, and SemiMonthly are extremply calculated frequencies.</div>
 
                                 <div class="form-check col-xs-12 col-lg-6 text-center">
                                     @Html.EditorFor(model => model.IsShared, new { htmlAttributes = new { @class = "form-check-input" } })
-                                    @Html.LabelFor(model => model.IsShared, new { htmlAttributes = new { @class = "form-check-label" } })
+                                    @Html.LabelFor(model => model.IsShared, new { @class = "form-check-label" })
                                     @Html.ValidationMessageFor(model => model.IsShared)
                                 </div>
-                                <div class="clearfix"></div>
-
-                                <div class="form-group col-xs-12 text-center">
+                                <div class="form-group col-xs-12 col-lg-6 text-center">
                                     <input type="submit" value="Save" class="btn btn-primary" />
                                 </div>
                             </div>

@@ -92,6 +92,28 @@ namespace MyFinances.Models
             return newLoans;
         }
 
+        public static List<DashboardItem> GetDashboardItems (this IEnumerable<Loan> loans, DashboardDateRange range, ApplicationUser user)
+        {
+            List<DashboardItem> items = new List<DashboardItem>();
+            foreach (Loan loan in loans)
+            {
+                foreach (LoanOutlook outlook in loan.LoanOutlook.Where(x => x.Date >= range.StartDate && x.Date <= range.EndDate))
+                {
+                    DashboardItem dbItem = new DashboardItem(outlook);
+                    dbItem.Name = loan.Name;
+                    dbItem.Id = loan.ID;
+                    items.Add(dbItem);
+                }
+
+                if (loan.LoanPayments.Any())
+                {
+                    items.AddRange(loan.LoanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x)));
+                }
+            }
+
+            return items;
+        }
+
         public static Loan Populate (this Loan loan)
         {
             loan.DueDate = loan.FirstPaymentDate;
