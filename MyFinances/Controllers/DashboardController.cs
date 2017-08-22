@@ -12,29 +12,22 @@ using MyFinances.Models;
 namespace MyFinances.Controllers
 {
     [Authorize]
-    public class DashboardController : Controller
-    {
-        private ApplicationDbContext db = new ApplicationDbContext();
-        private ApplicationUserManager userManager;
-        private ApplicationUser user;
-
-        private void LoadUser()
-        {
-            userManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            user = userManager.FindById(User.Identity.GetUserId());
-        }
-
+    public class DashboardController : BaseController
+    {        
         public ActionResult Index()
         {
-            LoadUser();
             DashboardViewModel viewModel = new DashboardViewModel();
 
-            IEnumerable<Bill> bills = db.Bills.Where(x => x.UserId == user.Id && x.IsActive).Include(x => x.BillPayments).ToList().Populate().OrderBy(x => x.DueDate);
-            IEnumerable<Loan> loans = db.Loans.Where(x => x.UserId == user.Id && x.IsActive).Include(x => x.LoanPayments).ToList().Populate().OrderBy(x => x.DueDate);
+            IEnumerable<Bill> bills = db.Bills.Where(x => x.User.Id == user.Id && x.IsActive).Include(x => x.BillPayments).ToList().Populate(user).OrderBy(x => x.DueDate);
+            IEnumerable<Bill> sharedBills = db.Bills.Where(x => x.IsActive && x.IsShared && db.SharedBill.Where(y => y.SharedWithUser.Id == user.Id).Select(y => y.Bill.ID).Contains(x.ID)).ToList().Populate(user, true).OrderBy(x => x.DueDate);
+            IEnumerable<Loan> loans = db.Loans.Where(x => x.User.Id == user.Id && x.IsActive).Include(x => x.LoanPayments).ToList().Populate(user).OrderBy(x => x.DueDate);
+            IEnumerable<Loan> sharedLoans = db.Loans.Where(x => x.IsActive && x.IsShared && db.SharedLoan.Where(y => y.SharedWithUser.Id == user.Id).Select(y => y.Loan.ID).Contains(x.ID)).ToList().Populate(user, true).OrderBy(x => x.DueDate);
 
             DateTime startDate = DateTime.Now;
             foreach (Bill bill in bills) { startDate = (bill.DueDate <= startDate) ? bill.DueDate : startDate; }
+            foreach (Bill bill in sharedBills) { startDate = (bill.DueDate <= startDate) ? bill.DueDate : startDate; }
             foreach (Loan loan in loans) { startDate = (loan.DueDate <= startDate) ? loan.DueDate : startDate; }
+            foreach (Loan loan in sharedLoans) { startDate = (loan.DueDate <= startDate) ? loan.DueDate : startDate; }
 
             startDate = GetUserStartDate(startDate);
 
@@ -44,7 +37,9 @@ namespace MyFinances.Controllers
             {
                 List<DashboardItem> items = new List<DashboardItem>();
                 items.AddRange(bills.GetDashboardItems(range, user));
+                items.AddRange(sharedBills.GetDashboardItems(range, user));
                 items.AddRange(loans.GetDashboardItems(range, user));
+                items.AddRange(sharedLoans.GetDashboardItems(range, user));
                 range.Items = items.OrderBy(x => x.Date);
             }
 
@@ -53,14 +48,13 @@ namespace MyFinances.Controllers
 
         public ActionResult History (int year = 0)
         {
-            LoadUser();
             year = (year == 0) ? DateTime.Now.Year : year;
 
             DashboardViewModel viewModel = new DashboardViewModel();
             viewModel.CurrentYear = year;
             
-            IEnumerable<BillPayment> billPayments = db.BillPayments.Where(x => x.UserId == user.Id).Include(x => x.Bill).OrderBy(x => x.DatePaid);
-            IEnumerable<LoanPayment> loanPayments = db.LoanPayments.Where(x => x.UserId == user.Id).Include(x => x.Loan).OrderBy(x => x.DatePaid);
+            IEnumerable<BillPayment> billPayments = db.BillPayments.Where(x => x.User.Id == user.Id).Include(x => x.Bill).OrderBy(x => x.DatePaid);
+            IEnumerable<LoanPayment> loanPayments = db.LoanPayments.Where(x => x.User.Id == user.Id).Include(x => x.Loan).OrderBy(x => x.DatePaid);
 
             int maxYear = 0;
             int minYear = DateTime.Now.Year;
@@ -199,7 +193,7 @@ namespace MyFinances.Controllers
             {
                 user.FirstDate = startDate;
                 user.SecondDate = endDate.AddDays(1);
-                userManager.Update(user);
+                //userManager.Update(user);
             }
 
             List<DashboardDateRange> dateRanges = new List<DashboardDateRange>();

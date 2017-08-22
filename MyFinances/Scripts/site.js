@@ -81,7 +81,7 @@ $(function () {
         $(this).parent("li").addClass("active");
         var selectedYear = $(this).attr("data-year");
         $(this).closest(".tab-pane").find("table tbody tr").removeClass("hide");
-        if (selectedYear != '') {
+        if (selectedYear !== '') {
             $(this).closest(".tab-pane").find("table tbody tr:not([data-year='" + selectedYear + "'])").addClass("hide");
         }
     })
@@ -107,6 +107,16 @@ $(function () {
         }).trigger("change");
     }
 
+    $("input#IsShared").on("change", function () {
+        if (this.checked) {
+            $(".selectPayees").slideDown(400);
+        } else {
+            $(".selectPayees").slideUp(400);
+        }
+        console.log(this.checked);
+        console.log('here');
+    });
+
     $("[data-toggle=\"tooltip\"]").tooltip();
     $(".confirmation").confirmModal();
 
@@ -114,7 +124,7 @@ $(function () {
         var target = $(this).attr('href');
         if (target.indexOf('gragh') > -1) {
             var chartNumber = $(this).attr('data-chart-number') - 1;
-            if (charts[chartNumber].loaded == false) {
+            if (charts[chartNumber].loaded === false) {
                 setTimeout(function () {
                     var chart = new CanvasJS.Chart(charts[chartNumber].chartName, {
                         theme: "theme3",
@@ -142,7 +152,7 @@ $(function () {
         var chartCount = charts.length,
             i = 0;
         for (i = 0; i < chartCount; i++) {
-            if (charts[i].loadOnStart == true) {
+            if (charts[i].loadOnStart === true) {
                 var chart = new CanvasJS.Chart(charts[i].chartName, {
                     theme: "theme3",
                     animationEnabled: true,

@@ -22,87 +22,139 @@
             <div class="col-xs-12 col-sm-6 col-md-12">
                 @if (ViewBag.Action != "Details")
                 {
-                    <div class="update-form standard margin-bottom-20">
-                        @using (Html.BeginForm())
+                    using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true)
+                        @Html.HiddenFor(model => model.ID)
+
+                        <div id="LoanForm" class="margin-bottom-20">
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li role="presentation" class="active"><a href="#editForm" aria-controls="editForm" role="tab" data-toggle="tab" class="btn-md">Edit Form</a></li>
+                                <li role="presentation"><a href="#payees" aria-controls="payees" role="tab" data-toggle="tab" class="btn-md">Payees</a></li>
+                            </ul>
+
+                            <div class="tab-content">
+                                <div role="tabpanel" class="tab-pane fade in active" id="editForm">
+                                    <div class="update-form standard">
+                                        <div class="row">
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.Name, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Name)
+                                            </div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.FirstPaymentDate, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.FirstPaymentDate, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.FirstPaymentDate)
+                                            </div>
+                                            <div class="clearfix"></div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.LoanAmount, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.LoanAmount, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.LoanAmount)
+                                            </div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.Term, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.Term, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Term)
+                                            </div>
+                                            <div class="clearfix"></div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.InterestRate, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.InterestRate, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.InterestRate)
+                                            </div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.Additional, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.Additional, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Additional)
+                                            </div>
+                                            <div class="clearfix"></div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.Escrow, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.Escrow, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Escrow)
+                                            </div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.InterestCompound, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EnumDropDownListFor(model => model.InterestCompound, "Select Interest Compound", new { @class = "form-control" })
+                                                @Html.ValidationMessageFor(model => model.InterestCompound)
+                                            </div>
+                                            <div class="clearfix"></div>
+
+                                            <div class="form-group col-xs-12 col-lg-6">
+                                                @Html.LabelFor(model => model.PaymentInterestRate, new { htmlAttributes = new { @class = "control-label" } })
+                                                @Html.EditorFor(model => model.PaymentInterestRate, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.PaymentInterestRate)
+                                            </div>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div role="tabpanel" class="tab-pane fade" id="payees">
+                                    <div class="update-form standard">
+                                        <div class="form-check">
+                                            @Html.EditorFor(model => model.IsShared, new { htmlAttributes = new { @class = "form-check-input" } })
+                                            @Html.LabelFor(model => model.IsShared, new { @class = "form-check-label" })
+                                            @Html.ValidationMessageFor(model => model.IsShared)
+                                        </div>
+
+                                        <div class="selectPayees" style="@(!Model.IsShared ? "display: none;" : "")">
+                                            <h4>Select Payees</h4>
+                                            <div class="row">
+                                                @if ((ViewBag.Users as List<MyFinances.Models.ApplicationUser>).Any())
+                                                {
+                                                    foreach (var user in ViewBag.Users)
+                                                    {
+                                                        bool userCheck = false;
+                                                        if (Model.SharedWith != null)
+                                                        {
+                                                            userCheck = Model.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null;
+                                                        }
+                                                        <div class="col-xs-12 col-md-6">
+                                                            <div class="form-check">
+                                                                <input type="checkbox" name="payeeId" value="@user.Id" class="form-check-input" id="@user.Id" checked="@userCheck" />
+                                                                <label for="@user.Id" class="form-check-label">@user.FirstName @user.LastName</label>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        if (ViewBag.Action == "Edit")
                         {
-                            @Html.AntiForgeryToken()
-                            @Html.ValidationSummary(true)
-                            @Html.HiddenFor(model => model.ID)
-
-                            <div class="row">
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Name, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Name)
-                                </div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.FirstPaymentDate, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.FirstPaymentDate, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.FirstPaymentDate)
-                                </div>
-                                <div class="clearfix"></div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.LoanAmount, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.LoanAmount, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.LoanAmount)
-                                </div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Term, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Term, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Term)
-                                </div>
-                                <div class="clearfix"></div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.InterestRate, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.InterestRate, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.InterestRate)
-                                </div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Additional, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Additional, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Additional)
-                                </div>
-                                <div class="clearfix"></div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.Escrow, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Escrow, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Escrow)
-                                </div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.InterestCompound, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EnumDropDownListFor(model => model.InterestCompound, "Select Interest Compound", new { @class = "form-control" })
-                                    @Html.ValidationMessageFor(model => model.InterestCompound)
-                                </div>
-                                <div class="clearfix"></div>
-
-                                <div class="form-group col-xs-12 col-lg-6">
-                                    @Html.LabelFor(model => model.PaymentInterestRate, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.PaymentInterestRate, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.PaymentInterestRate)
-                                </div>
-                                <div class="clearfix"></div>
-
-                                <div class="form-group col-xs-12 text-center">
-                                    <input type="submit" name="button" value="Save" class="btn btn-primary" />
+                            <div class="margin-bottom-20">
+                                <div class="pull-right">
                                     <input type="submit" name="button" value="Calculate" class="btn btn-success" />
+                                    <input type="submit" name="button" value="Save" class="btn btn-primary" />
                                 </div>
+                                @Html.ActionLink("Deactivate", "Deactivate", new { id = Model.ID }, new
+                                {
+                                    @class = "btn btn-danger confirmation",
+                                    data_confirm_title = "Deactivate " + Model.Name + " Loan",
+                                    data_confirm_message = "Are you sure you want to deactivate deactivate " + Model.Name + " Loan?",
+                                    data_confirm_style = "danger",
+                                    data_toggle = "tooltip",
+                                    data_placement = "right",
+                                    title = "Will set to NOT active - Payments will NOT be deleted"
+                                })
                             </div>
                         }
-                    </div>
-                    if (ViewBag.Action == "Edit")
-                    {
-                        <div class="margin-bottom-20">
-                            @Html.ActionLink("Deactivate", "Deactivate", new { id = Model.ID }, new { @class = "btn btn-danger confirmation",
-                                data_confirm_title = "Deactivate " + Model.Name + " Loan", data_confirm_message= "Are you sure you want to deactivate deactivate " + Model.Name + " Loan?", data_confirm_style="danger",
-                                data_toggle ="tooltip", data_placement="right", title="Will set to NOT active - Payments will NOT be deleted" })
-                        </div>
                     }
                 }
                 else
@@ -132,20 +184,34 @@
                         </div>
                     </div>
                     <div class="text-right margin-bottom-20">
-                        @if (Model.IsActive)
+                        @if (Model.IsActive && !Model.NotOwner)
                         {
                             @Html.ActionLink("Add Payment", "AddPayment", new { ID = Model.ID }, new { @class = "btn btn-success" })
                             @Html.ActionLink("Edit Loan", "Edit", new { ID = Model.ID }, new { @class = "btn btn-primary" })
                         }
-                        else
+                        @if (!Model.IsActive)
                         {
-                            @Html.ActionLink("Delete", "Delete", new { ID = Model.ID }, new { @class = "btn btn-danger confirmation pull-left",
-                                data_confirm_title = "Permanently Delete " + Model.Name + " Loan", data_confirm_message = "Are you sure you want to permanently delete " + Model.Name + " Loan?<br><strong>All payments will be deleted with deletion.</strong>", data_confirm_style = "danger",
-                                data_toggle = "tooltip", data_placement = "right", title = "Will delete - Payments WILL BE DELETED" })
+                            @Html.ActionLink("Delete", "Delete", new { ID = Model.ID }, new
+                            {
+                                @class = "btn btn-danger confirmation pull-left",
+                                data_confirm_title = "Permanently Delete " + Model.Name + " Loan",
+                                data_confirm_message = "Are you sure you want to permanently delete " + Model.Name + " Loan?<br><strong>All payments will be deleted with deletion.</strong>",
+                                data_confirm_style = "danger",
+                                data_toggle = "tooltip",
+                                data_placement = "right",
+                                title = "Will delete - Payments WILL BE DELETED"
+                            })
 
-                            @Html.ActionLink("Activate", "Activate", new { ID = Model.ID }, new { @class = "btn btn-success confirmation",
-                                data_confirm_title = "Activate " + Model.Name + " Loan", data_confirm_message = "Are you sure you want to activate " + Model.Name + " Loan?", data_confirm_style = "success",
-                                data_toggle = "tooltip", data_placement = "left", title = "Set Active" })
+                            @Html.ActionLink("Activate", "Activate", new { ID = Model.ID }, new
+                            {
+                                @class = "btn btn-success confirmation",
+                                data_confirm_title = "Activate " + Model.Name + " Loan",
+                                data_confirm_message = "Are you sure you want to activate " + Model.Name + " Loan?",
+                                data_confirm_style = "success",
+                                data_toggle = "tooltip",
+                                data_placement = "left",
+                                title = "Set Active"
+                            })
                         }
                     </div>
                 }

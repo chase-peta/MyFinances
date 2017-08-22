@@ -28,6 +28,8 @@ namespace MyFinances.Models
             Date = bill.DueDate;
             Amount = bill.Amount;
             IsShared = bill.IsShared;
+            SharedAmount = bill.SharedAmount;
+            NotOwner = bill.NotOwner;
             Type = "Bill";
             IsPaid = false;
         }
@@ -39,6 +41,8 @@ namespace MyFinances.Models
             Date = payment.DatePaid;
             Amount = payment.Amount;
             IsShared = payment.Bill.IsShared;
+            SharedAmount = payment.SharedAmount;
+            NotOwner = payment.Bill.NotOwner;
             Type = "Bill";
             IsPaid = true;
         }
@@ -58,16 +62,22 @@ namespace MyFinances.Models
             Name = payment.Loan.Name;
             Date = payment.DatePaid;
             Amount = payment.Payment;
-            IsShared = false;
+            SharedAmount = payment.SharedAmount;
+            IsShared = payment.Loan.IsShared;
+            NotOwner = payment.Loan.NotOwner;
             Type = "Loan";
             IsPaid = true;
         }
 
         public DashboardItem (LoanOutlook outlook)
         {
+            Id = outlook.Loan.ID;
+            Name = outlook.Loan.Name;
             Date = outlook.Date;
-            Amount = outlook.Additional + outlook.Base + outlook.Escrow + outlook.Interest;
-            IsShared = false;
+            Amount = outlook.Payment;
+            SharedAmount = outlook.SharedPayment;
+            IsShared = outlook.Loan.IsShared;
+            NotOwner = outlook.Loan.NotOwner;
             Type = "Loan";
             IsPaid = false;
         }
@@ -84,11 +94,16 @@ namespace MyFinances.Models
         [Display(Name = "Amount"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Amount { get; set; }
 
+        [Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedAmount { get; set; }
+
         [Display(Name = "Due In"), DisplayFormat(DataFormatString = "{0} Days")]
         public double DueInDays { get { return (Date - new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day)).TotalDays; } }
 
         [Display(Name = "Paid")]
         public bool IsPaid { get; set; }
+
+        public bool NotOwner { get; set; }
 
         [Display(Name = "Due In")]
         public string DueIn
@@ -155,6 +170,20 @@ namespace MyFinances.Models
                     total += item.Amount;
                 }
                 return total;
+            }
+        }
+
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedTotal
+        {
+            get
+            {
+                decimal sharedTotal = Convert.ToDecimal(0.0);
+                foreach(DashboardItem item in Items)
+                {
+                    sharedTotal += item.SharedAmount;
+                }
+                return sharedTotal;
             }
         }
 

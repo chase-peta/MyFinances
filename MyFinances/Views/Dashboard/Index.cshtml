@@ -42,6 +42,7 @@
                                         <th>@Html.DisplayNameFor(m => range.Items.First().DueInDays)</th>
                                         <th></th>
                                         <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().Amount)</th>
+                                        <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().SharedAmount)</th>
                                     </tr>
                                 </thead>
                                 @foreach (MyFinances.Models.DashboardItem item in range.Items)
@@ -51,7 +52,7 @@
                                         <td>@Html.DisplayFor(m => item.Date)</td>
                                         <td>@Html.DisplayFor(m => item.DueIn)</td>
                                         <td>
-                                            @if (!item.IsPaid)
+                                            @if (!item.NotOwner && !item.IsPaid)
                                             {
                                                 if (item.Type == "Bill")
                                                 {
@@ -64,11 +65,13 @@
                                             }
                                         </td>
                                         <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
+                                        <td class="text-right">@Html.DisplayFor(m => item.SharedAmount)</td>
                                     </tr>
                                 }
                                 <tfoot>
                                     <tr>
                                         <th class="text-right" colspan="5">@Html.DisplayNameFor(x => range.Total): <span class="total">@Html.DisplayFor(x => range.Total)</span></th>
+                                        <th class="text-right"><span class="total">@Html.DisplayFor(x => range.SharedTotal)</span></th>
                                     </tr>
                                 </tfoot>
                             </table>

@@ -4,53 +4,29 @@ using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
-using System.Security.Claims;
 using System.Web;
 using System.Web.Mvc;
 using MyFinances.Models;
 using Microsoft.AspNet.Identity;
 using MyFinances;
-using Microsoft.AspNet.Identity.Owin;
+using MyFinances.Controllers;
 
 namespace Finances.Controllers
 {
     [Authorize]
-    public class BillsController : Controller
+    public class BillsController : BaseController
     {
-        private ApplicationDbContext db = new ApplicationDbContext();
-        private ApplicationUserManager userManager;
-        private ApplicationUser user;
-
-        private void LoadUser ()
-        {
-            userManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            user = userManager.FindById(User.Identity.GetUserId());
-        }
-
         public ActionResult Index (bool showInactive = false)
         {
             ViewBag.ShowInactive = showInactive;
-            LoadUser();
-            if (showInactive)
-            {
-                return View(db.Bills.Where(x => x.UserId == user.Id).Include(x => x.BillPayments).OrderBy(x => x.IsActive).ThenBy(x => x.DueDate).ToList().Populate());
-            }
-            else
-            {
-                return View(db.Bills.Where(x => x.UserId == user.Id && x.IsActive).Include(x => x.BillPayments).OrderBy(x => x.DueDate).ToList().Populate());
-            }
+            return View(GetBills(showInactive));
         }
 
         public ActionResult Details (int? id)
         {
             ViewBag.Action = "Details";
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            Bill bill = db.Bills.Find(id).Populate();
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = GetBill(id);
+            if (bill == null)
             {
                 return HttpNotFound();
             }
@@ -60,69 +36,65 @@ namespace Finances.Controllers
         public ActionResult Create ()
         {
             ViewBag.Action = "Create";
-            return View("Details");
+            ViewBag.Users = GetAvailableUsers();
+            return View("Details", new Bill());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create ([Bind(Include = "Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill bill)
+        public ActionResult Create (string[] payeeId, [Bind(Include = "Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill bill)
         {
             ViewBag.Action = "Create";
             if (ModelState.IsValid)
             {
+                bill.User = db.Users.Find(user.Id);
                 db.Bills.Add(bill);
+                UpdateBillShared(bill, payeeId);
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
+            ViewBag.Users = GetAvailableUsers();
             return View("Details", bill);
         }
 
         public ActionResult Edit (int? id)
         {
             ViewBag.Action = "Edit";
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            Bill bill = db.Bills.Find(id).Populate();
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = GetBill(id);
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
+            ViewBag.Users = GetAvailableUsers();
             return View("Details", bill);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit ([Bind(Include = "ID,Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill subBill)
+        public ActionResult Edit (string[] payeeId, [Bind(Include = "ID,Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill subBill)
         {
             ViewBag.Action = "Edit";
-            LoadUser();
             Bill bill = db.Bills.Find(subBill.ID);
-            if (bill == null || bill.UserId != user.Id)
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
-            bill = bill.MapSubmit(subBill).Populate();
+            bill = bill.MapSubmit(subBill).Populate(user);
             if (ModelState.IsValid)
             {
                 db.Entry(bill).State = EntityState.Modified;
+                UpdateBillShared(bill, payeeId);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = bill.ID });
             }
+            ViewBag.Users = GetAvailableUsers();
             return View("Details", bill);
         }
 
         public ActionResult Deactivate(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            Bill bill = db.Bills.Find(id);
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = GetBill(id);
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
@@ -134,13 +106,8 @@ namespace Finances.Controllers
 
         public ActionResult Activate (int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            Bill bill = db.Bills.Find(id);
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = GetBill(id);
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
@@ -152,19 +119,16 @@ namespace Finances.Controllers
         
         public ActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            Bill bill = db.Bills.Find(id).Populate();
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = GetBill(id);
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
+            bill.SharedWith.ToList().ForEach(x => db.SharedBill.Remove(x));
             if (bill.BillPayments.Any())
             {
-                bill.BillPayments.ToList().ForEach(x => db.BillPayments.Remove(x));
+                bill.BillPayments.ToList().ForEach(x => db.SharedBillPayment.RemoveRange(x.SharedWith));
+                db.BillPayments.RemoveRange(bill.BillPayments);
             }
             db.Bills.Remove(bill);
             db.SaveChanges();
@@ -174,13 +138,8 @@ namespace Finances.Controllers
         public ActionResult AddPayment (int? id)
         {
             ViewBag.Action = "Add Payment";
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            Bill bill = db.Bills.Find(id).Populate();
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = GetBill(id);
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
@@ -190,60 +149,53 @@ namespace Finances.Controllers
             payment.DatePaid = bill.DueDate;
             payment.Payee = bill.Payee;
             payment.Bill = bill;
-
+            
+            ViewBag.Users = GetAvailableUsers(payment.Bill);
             return View("Payment", payment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddPayment (int? id, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
+        public ActionResult AddPayment (int? id, string[] payeeId, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
         {
             ViewBag.Action = "Add Payment";
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            billPayment.Bill = db.Bills.Find(id).Populate();
-            if (billPayment == null || billPayment.Bill.UserId != user.Id)
+            billPayment.Bill = GetBill(id);
+            if (billPayment == null || billPayment.Bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
             if (ModelState.IsValid)
             {
+                billPayment.User = db.Users.Find(user.Id);
                 db.BillPayments.Add(billPayment);
                 db.Entry(saveBillForNextPayment(billPayment)).State = EntityState.Modified;
+                UpdateBillPaymentShared(billPayment, payeeId);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = billPayment.Bill.ID });
             }
+            ViewBag.Users = GetAvailableUsers(billPayment.Bill);
             return View("Payment", billPayment);
         }
 
         public ActionResult EditPayment (int? id)
         {
             ViewBag.Action = "Edit Payment";
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            BillPayment billPayment = db.BillPayments.Find(id);
-            if (billPayment == null || billPayment.UserId != user.Id)
+            BillPayment billPayment = GetBillPayment(id);
+            if (billPayment == null || billPayment.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
-            billPayment.Bill = billPayment.Bill.Populate();
+            ViewBag.Users = GetAvailableUsers(billPayment.Bill);
             return View("Payment", billPayment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditPayment (int id, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
+        public ActionResult EditPayment (int id, string[] payeeId, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
         {
             ViewBag.Action = "Edit Payment";
-            LoadUser();
-            BillPayment bp = db.BillPayments.Find(id);
-            if (bp == null || bp.UserId != user.Id)
+            BillPayment bp = GetBillPayment(id);
+            if (bp == null || bp.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
@@ -252,7 +204,10 @@ namespace Finances.Controllers
                 bp.Amount = billPayment.Amount;
                 bp.DatePaid = billPayment.DatePaid;
                 bp.Payee = billPayment.Payee;
+                
                 db.Entry(bp).State = EntityState.Modified;
+                db.SaveChanges();
+                UpdateBillPaymentShared(bp, payeeId);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = bp.Bill.ID });
             }
@@ -261,17 +216,14 @@ namespace Finances.Controllers
 
         public ActionResult DeletePayment (int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            LoadUser();
-            BillPayment billPayment = db.BillPayments.Find(id);
-            if (billPayment == null || billPayment.UserId != user.Id)
+            BillPayment billPayment = GetBillPayment(id);
+            if (billPayment == null)
             {
                 return HttpNotFound();
             }
             Bill bill = billPayment.Bill;
+            db.SharedBillPayment.RemoveRange(billPayment.SharedWith);
+            db.SaveChanges();
             db.BillPayments.Remove(billPayment);
             db.SaveChanges();
             return RedirectToAction("Details", new { id = bill.ID });
@@ -283,9 +235,8 @@ namespace Finances.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            LoadUser();
-            Bill bill = db.Bills.Find(id);
-            if (bill == null || bill.UserId != user.Id)
+            Bill bill = db.Bills.Find(id).Populate(user);
+            if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
@@ -297,6 +248,11 @@ namespace Finances.Controllers
             billPayment.Payee = bill.Payee;
 
             db.BillPayments.Add(billPayment);
+            if (billPayment.Bill.IsShared && billPayment.Bill.SharedWith.Count() > 0)
+            {
+                List<ApplicationUser> users = GetAvailableUsers(bill);
+                users.ForEach(x => db.SharedBillPayment.Add(new SharedBillPayment(billPayment, x)));
+            }
             db.Entry(saveBillForNextPayment(billPayment)).State = EntityState.Modified;
             db.SaveChanges();
             if (r == "Dashboard")
@@ -307,15 +263,6 @@ namespace Finances.Controllers
             {
                 return RedirectToAction(r, new { id = bill.ID });
             }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
         }
 
         private Bill saveBillForNextPayment(BillPayment billPayment)

@@ -11,7 +11,7 @@
 
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane fade @(!ViewBag.Calculate ? "in active" : "")" id="loanPaymentHistory">
-                    @if (Model.LoanPayments != null && Model.LoanPayments.Any())
+                    @if ((Model.NotOwner && Model.NotOwnerLoanPayments != null && Model.NotOwnerLoanPayments.Any()) || (!Model.NotOwner && Model.LoanPayments != null && Model.LoanPayments.Any()))
                     {
                         <div class="text-center">
                             <ul class="pagination">
@@ -29,26 +29,37 @@
                             <thead>
                                 <tr>
                                     <th>@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Date)</th>
-                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Interest)</th>
-                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Escrow)</th>
-                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Base)</th>
-                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Additional)</th>
-                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Payment)</th>
-                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Principal)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().Interest)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().Escrow)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().Base)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().Additional)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().Payment)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().SharedAmount)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanPayments.FirstOrDefault().Principal)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (Model.LoanPayments != null && Model.LoanPayments.Any())
+                                @if ((Model.NotOwner && Model.NotOwnerLoanPayments != null && Model.NotOwnerLoanPayments.Any()) || (!Model.NotOwner && Model.LoanPayments != null && Model.LoanPayments.Any()))
                                 {
-                                    foreach (var item in Model.LoanPayments.OrderBy(x => x.DatePaid))
+                                    foreach (var item in (Model.NotOwner) ? Model.NotOwnerLoanPayments.ToList() : Model.LoanPayments.ToList())
                                     {
                                         <tr class="@(Model.IsActive && Model.LastPaymentDate == item.DatePaid ? "alert-success with-border" : "") hide" id="LoanPayment-@item.ID" data-year="@item.DatePaid.Year">
-                                            <th>@Html.ActionLink(item.DatePaid.ToString("MMMM - dd"), "EditPayment", new { id = item.ID }, new { @class = "datePaid" })</th>
+                                            <th>
+                                                @if (Model.NotOwner)
+                                                {
+                                                    @item.DatePaid.ToString("MMMM - dd")
+                                                }
+                                                else
+                                                {
+                                                    @Html.ActionLink(item.DatePaid.ToString("MMMM - dd"), "EditPayment", new { id = item.ID }, new { @class = "datePaid" })
+                                                }
+                                            </th>
                                             <td class="text-right"><span class="interest">@Html.DisplayFor(m => item.Interest)</span></td>
                                             <td class="text-right"><span class="escrow">@Html.DisplayFor(m => item.Escrow)</span></td>
                                             <td class="text-right"><span class="base">@Html.DisplayFor(m => item.Base)</span></td>
                                             <td class="text-right"><span class="additional">@Html.DisplayFor(m => item.Additional)</span></td>
                                             <td class="text-right"><span class="payment">@Html.DisplayFor(m => item.Payment)</span></td>
+                                            <td class="text-right">@Html.DisplayFor(model => item.SharedAmount)</td>
                                             <td class="text-right"><span class="principal">@Html.DisplayFor(m => item.Principal)</span></td>
                                         </tr>
                                     }
@@ -56,12 +67,22 @@
                                 @if (Model.IsActive && Model.NextPayment != null)
                                 {
                                     <tr class="next-payment alert-warning hide" id="LoanPayment-0" data-year="@Model.LastPaymentDate.Year">
-                                        <th>@Html.ActionLink(Model.NextPayment.Date.ToString("MMMM - dd"), "AddPayment", new { id = Model.ID }, new { @class = "datePaid" })</th>
+                                        <th>
+                                            @if (Model.NotOwner)
+                                            {
+                                                @Model.NextPayment.Date.ToString("MMMM - dd")
+                                            }
+                                            else
+                                            {
+                                                @Html.ActionLink(Model.NextPayment.Date.ToString("MMMM - dd"), "AddPayment", new { id = Model.ID }, new { @class = "datePaid" })
+                                            }
+                                        </th>
                                         <td class="text-right"><span class="interest">@Html.DisplayFor(m => Model.NextPayment.Interest)</span></td>
                                         <td class="text-right"><span class="escrow">@Html.DisplayFor(m => Model.NextPayment.Escrow)</span></td>
                                         <td class="text-right"><span class="base">@Html.DisplayFor(m => Model.NextPayment.Base)</span></td>
                                         <td class="text-right"><span class="additional">@Html.DisplayFor(m => Model.NextPayment.Additional)</span></td>
                                         <td class="text-right"><span class="payment">@Html.DisplayFor(m => Model.NextPayment.Payment)</span></td>
+                                        <td class="text-right"><span class="payment">@Html.DisplayFor(m => Model.NextPayment.SharedPayment)</span></td>
                                         <td class="text-right"><span class="principal">@Html.DisplayFor(m => Model.NextPayment.Principal)</span></td>
                                     </tr>
                                 }
@@ -94,6 +115,7 @@
                                     <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Base)</th>
                                     <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Additional)</th>
                                     <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Payment)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().SharedPayment)</th>
                                     <th class="text-right">@Html.DisplayNameFor(model => model.LoanOutlook.FirstOrDefault().Principal)</th>
                                 </tr>
                             </thead>
@@ -109,6 +131,7 @@
                                             <td class="text-right">@Html.DisplayFor(m => item.Base)</td>
                                             <td class="text-right">@Html.DisplayFor(m => item.Additional)</td>
                                             <td class="text-right">@Html.DisplayFor(m => item.Payment)</td>
+                                            <td class="text-right">@Html.DisplayFor(m => item.SharedPayment)</td>
                                             <td class="text-right">@Html.DisplayFor(m => item.Principal)</td>
                                         </tr>
                                     }

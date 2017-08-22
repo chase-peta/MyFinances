@@ -22,37 +22,55 @@
                         <input type="hidden" name="loanPaymentId" id="loanPaymentId" value="@Model.ID" />
 
                         <div class="row">
-                            <div class="form-group col-xs-12">
-                                @Html.LabelFor(model => model.DatePaid, new { htmlAttributes = new { @class = "control-label" } })
-                                @Html.EditorFor(model => model.DatePaid, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.DatePaid)
+                            <div class="col-xs-12 col-lg-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.DatePaid, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.EditorFor(model => model.DatePaid, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.DatePaid)
+                                </div>
+                                <div class="clearfix"></div>
+
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Base, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.EditorFor(model => model.Base, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.Base)
+                                </div>
+
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Interest, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.EditorFor(model => model.Interest, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.Interest)
+                                </div>
+
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Additional, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.EditorFor(model => model.Additional, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.Additional)
+                                </div>
+
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Escrow, new { htmlAttributes = new { @class = "control-label" } })
+                                    @Html.EditorFor(model => model.Escrow, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.Escrow)
+                                </div>
+                            </div>
+
+                            <div class="col-xs-12 col-lg-6">
+                                <h4>Select Payees</h4>
+                                @if ((ViewBag.Users as List<MyFinances.Models.ApplicationUser>).Any())
+                                {
+                                    foreach (var user in ViewBag.Users)
+                                    {
+                                        bool userCheck = (Model.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null || ViewBag.Action == "Add Payment");
+                                        <div class="form-check">
+                                            <input type="checkbox" name="payeeId" value="@user.Id" class="form-check-input" id="@user.Id" checked="@userCheck" />
+                                            <label for="@user.Id" class="form-check-label">@user.FirstName @user.LastName</label>
+                                        </div>
+                                    }
+                                }
                             </div>
                             <div class="clearfix"></div>
-
-                            <div class="form-group col-xs-12 col-lg-6">
-                                @Html.LabelFor(model => model.Base, new { htmlAttributes = new { @class = "control-label" } })
-                                @Html.EditorFor(model => model.Base, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Base)
-                            </div>
-
-                            <div class="form-group col-xs-12 col-lg-6">
-                                @Html.LabelFor(model => model.Interest, new { htmlAttributes = new { @class = "control-label" } })
-                                @Html.EditorFor(model => model.Interest, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Interest)
-                            </div>
-                            <div class="clearfix"></div>
-
-                            <div class="form-group col-xs-12 col-lg-6">
-                                @Html.LabelFor(model => model.Additional, new { htmlAttributes = new { @class = "control-label" } })
-                                @Html.EditorFor(model => model.Additional, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Additional)
-                            </div>
-
-                            <div class="form-group col-xs-12 col-lg-6">
-                                @Html.LabelFor(model => model.Escrow, new { htmlAttributes = new { @class = "control-label" } })
-                                @Html.EditorFor(model => model.Escrow, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Escrow)
-                            </div>
+                            
                             <div class="clearfix"></div>
 
                             <div class="form-group text-center col-xs-12">

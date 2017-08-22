@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -30,10 +31,21 @@ namespace MyFinances.Models
         [Display(Name = "Payment Frequency"), Required]
         public PaymentFrequency PaymentFrequency { get; set; }
 
-        [Display(Name = "Shared")]
+        [Display(Name = "This Bill Is Shared")]
         public bool IsShared { get; set; }
 
+        public virtual ICollection<SharedBill> SharedWith { get; set; }
+
         public virtual ICollection<BillPayment> BillPayments { get; set; }
+
+        [NotMapped]
+        public List<BillPayment> NotOwnerBillPayments { get; set; }
+
+        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedAmount { get; set; }
+
+        [NotMapped]
+        public bool NotOwner { get; set; }
 
         [NotMapped]
         public virtual ICollection<BillAverage> BillAverages
@@ -52,16 +64,25 @@ namespace MyFinances.Models
         [NotMapped, Display(Name = "Average"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal AveragePaid { get; set; }
 
+        [NotMapped, Display(Name = "Average Shared"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal AveragePaidShared { get; set; }
+
         [NotMapped, Display(Name = "Min Paid"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal MinPaid { get; set; }
+
+        [NotMapped, Display(Name = "Min Paid Shared"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal MinPaidShared { get; set; }
 
         [NotMapped, Display(Name = "Max Paid"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal MaxPaid { get; set; }
 
+        [NotMapped, Display(Name = "Max Paid Shared"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal MaxPaidShared { get; set; }
+
         [NotMapped, Display(Name = "Last Payment Date"), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime LastPaymentDate { get; set; }
 
-        [NotMapped, Display(Name = "Last Payment Date"), DisplayFormat(DataFormatString = "{0:c}")]
+        [NotMapped, Display(Name = "Last Payment Amount"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal LastPaymentAmount { get; set; }
 
         [NotMapped]
@@ -73,12 +94,12 @@ namespace MyFinances.Models
 
     public static class BillHelpers
     {
-        public static List<Bill> Populate (this List<Bill> bills)
+        public static List<Bill> Populate (this List<Bill> bills, ApplicationUser user, bool notOwner = false)
         {
             List<Bill> newBills = new List<Bill>();
             foreach (Bill bill in bills)
             {
-                newBills.Add(bill.Populate());
+                newBills.Add(bill.Populate(user, notOwner));
             }
             return newBills;
         }
@@ -103,35 +124,61 @@ namespace MyFinances.Models
                         DashboardItem item = new DashboardItem(bill);
                         item.Date = date;
                         item.Amount = newDateAmount.Item2;
+                        item.SharedAmount = item.Amount / (bill.SharedWith.Count() + 1);
                         items.Add(item);
                     }
                 }
 
                 if (bill.BillPayments.Any())
                 {
-                    items.AddRange(bill.BillPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x)));
+                    items.AddRange(bill.BillPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate)
+                        .Where(x => x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any())
+                        .Select(x => new DashboardItem(x)));
                 }
             }
 
             return items;
         }
 
-        public static Bill Populate(this Bill bill)
+        public static Bill Populate(this Bill bill, ApplicationUser user, bool notOwner = false)
         {
+            bill.NotOwner = notOwner;
+            bill.SharedAmount = bill.Amount / (bill.SharedWith.Count() + 1);
+
             if (bill.BillPayments != null && bill.BillPayments.Any())
             {
-                BillPayment lastPayment = bill.BillPayments.OrderBy(x => x.DatePaid).LastOrDefault();
-                if (lastPayment != null)
+                if (bill.NotOwner)
                 {
-                    bill.LastPaymentDate = lastPayment.DatePaid;
-                    bill.LastPaymentAmount = lastPayment.Amount;
+                    bill.NotOwnerBillPayments = bill.BillPayments.Where(x => x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()).OrderBy(x => x.DatePaid).ToList();
+                    if (bill.NotOwnerBillPayments != null && bill.NotOwnerBillPayments.Any())
+                    {
+                        BillPayment lastPayment = bill.NotOwnerBillPayments.LastOrDefault();
+                        if (lastPayment != null)
+                        {
+                            bill.LastPaymentDate = lastPayment.DatePaid;
+                            bill.LastPaymentAmount = lastPayment.Amount;
+                        }
+                        bill.MinYear = bill.NotOwnerBillPayments.Min(x => x.DatePaid.Year);
+                        bill.MaxYear = bill.NotOwnerBillPayments.Max(x => x.DatePaid.Year);
+                    }
                 }
-
-                bill.AveragePaid = bill.BillPayments.Average(x => x.Amount);
+                else
+                {
+                    BillPayment lastPayment = bill.BillPayments.OrderBy(x => x.DatePaid).LastOrDefault();
+                    if (lastPayment != null)
+                    {
+                        bill.LastPaymentDate = lastPayment.DatePaid;
+                        bill.LastPaymentAmount = lastPayment.Amount;
+                    }
+                    bill.MinYear = bill.BillPayments.Min(x => x.DatePaid.Year);
+                    bill.MaxYear = bill.BillPayments.Max(x => x.DatePaid.Year);
+                }
                 bill.MinPaid = bill.BillPayments.Min(x => x.Amount);
                 bill.MaxPaid = bill.BillPayments.Max(x => x.Amount);
-                bill.MinYear = bill.BillPayments.Min(x => x.DatePaid.Year);
-                bill.MaxYear = bill.BillPayments.Min(x => x.DatePaid.Year);
+                bill.AveragePaid = bill.BillPayments.Average(x => x.Amount);
+                bill.MinPaidShared = bill.MinPaid / (bill.SharedWith.Count() + 1);
+                bill.MaxPaidShared = bill.MaxPaid / (bill.SharedWith.Count() + 1);
+                bill.AveragePaidShared = bill.AveragePaid / (bill.SharedWith.Count() + 1);
             }
 
             double dueInDays = (bill.DueDate - new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day)).TotalDays;
@@ -255,6 +302,22 @@ namespace MyFinances.Models
         }
     }
 
+    public class SharedBill : BaseShare
+    {
+        public SharedBill()
+        {
+            Bill = new Bill();
+        }
+
+        public SharedBill (Bill bill, ApplicationUser user)
+        {
+            Bill = bill;
+            SharedWithUser = user;
+        }
+
+        public virtual Bill Bill { get; set; }
+    }
+
     public class BillAverage
     {
         public BillAverage(Bill bill, int month)
@@ -271,6 +334,9 @@ namespace MyFinances.Models
                     Max = billPayments.Max(x => x.Amount);
                     Min = billPayments.Min(x => x.Amount);
                     Average = billPayments.Average(x => x.Amount);
+                    MaxShared = Max / (bill.SharedWith.Count() + 1);
+                    MinShared = Min / (bill.SharedWith.Count() + 1);
+                    AverageShared = Average / (bill.SharedWith.Count() + 1);
                 }
             }
         }
@@ -279,10 +345,19 @@ namespace MyFinances.Models
         public decimal Average { get; set; }
 
         [Column(TypeName = "money"), DataType(DataType.Currency)]
+        public decimal AverageShared { get; set; }
+
+        [Column(TypeName = "money"), DataType(DataType.Currency)]
         public decimal Min { get; set; }
 
         [Column(TypeName = "money"), DataType(DataType.Currency)]
+        public decimal MinShared { get; set; }
+
+        [Column(TypeName = "money"), DataType(DataType.Currency)]
         public decimal Max { get; set; }
+
+        [Column(TypeName = "money"), DataType(DataType.Currency)]
+        public decimal MaxShared { get; set; }
 
         [DataType(DataType.Date), DisplayFormat(DataFormatString = "{0:MMMM, d}", ApplyFormatInEditMode = true)]
         public DateTime Date { get; set; }
@@ -292,6 +367,11 @@ namespace MyFinances.Models
 
     public class BillPayment : BaseFinances
     {
+        public BillPayment()
+        {
+            SharedWith = new Collection<SharedBillPayment>();
+        }
+
         [Display(Name = "Date Paid"), DataType(DataType.Date), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true), Required]
         public DateTime DatePaid { get; set; }
 
@@ -302,6 +382,31 @@ namespace MyFinances.Models
         public string Payee { get; set; }
 
         public virtual Bill Bill { get; set; }
+
+        public virtual ICollection<SharedBillPayment> SharedWith { get; set; }
+
+        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedAmount { get
+            {
+                return Amount / (SharedWith.Count() + 1);
+            }
+        }
+    }
+
+    public class SharedBillPayment : BaseShare
+    {
+        public SharedBillPayment ()
+        {
+            BillPayment = new BillPayment();
+        }
+
+        public SharedBillPayment (BillPayment billPayment, ApplicationUser user)
+        {
+            BillPayment = billPayment;
+            SharedWithUser = user;
+        }
+
+        public virtual BillPayment BillPayment { get; set; }
     }
 }
  

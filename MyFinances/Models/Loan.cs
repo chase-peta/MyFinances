@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -38,7 +39,21 @@ namespace MyFinances.Models
         [Display(Name = "Interest Compound"), Required]
         public InterestCompound InterestCompound { get; set; }
 
+        [Display(Name = "This Bill Is Shared")]
+        public bool IsShared { get; set; }
+
+        public virtual ICollection<SharedLoan> SharedWith { get; set; }
+
         public virtual ICollection<LoanPayment> LoanPayments { get; set; }
+
+        [NotMapped]
+        public List<LoanPayment> NotOwnerLoanPayments { get; set; }
+
+        [NotMapped]
+        public bool NotOwner { get; set; }
+        
+        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedMonthlyPayment { get; set; }
 
         [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Principal { get; set; }
@@ -80,14 +95,29 @@ namespace MyFinances.Models
         public ICollection<LoanOutlook> LoanOutlook { get; set; }
     }
 
+    public class SharedLoan : BaseShare
+    {
+        public SharedLoan () {
+            Loan = new Loan();
+        }
+
+        public SharedLoan (Loan loan, ApplicationUser user)
+        {
+            Loan = loan;
+            SharedWithUser = user;
+        }
+
+        public virtual Loan Loan { get; set; }
+    }
+
     public static class LoanHelpers
     {
-        public static List<Loan> Populate (this List<Loan> loans)
+        public static List<Loan> Populate (this List<Loan> loans, ApplicationUser user, bool notOwner = false)
         {
             List<Loan> newLoans = new List<Loan>();
             foreach (Loan loan in loans)
             {
-                newLoans.Add(loan.Populate());
+                newLoans.Add(loan.Populate(user, notOwner));
             }
             return newLoans;
         }
@@ -99,10 +129,7 @@ namespace MyFinances.Models
             {
                 foreach (LoanOutlook outlook in loan.LoanOutlook.Where(x => x.Date >= range.StartDate && x.Date <= range.EndDate))
                 {
-                    DashboardItem dbItem = new DashboardItem(outlook);
-                    dbItem.Name = loan.Name;
-                    dbItem.Id = loan.ID;
-                    items.Add(dbItem);
+                    items.Add(new DashboardItem(outlook));
                 }
 
                 if (loan.LoanPayments.Any())
@@ -114,8 +141,9 @@ namespace MyFinances.Models
             return items;
         }
 
-        public static Loan Populate (this Loan loan)
+        public static Loan Populate (this Loan loan, ApplicationUser user, bool notOwner = false)
         {
+            loan.NotOwner = notOwner;
             loan.DueDate = loan.FirstPaymentDate;
             loan.BasePayment = loan.CalculateMonthlyPayment();
             loan.MonthlyPayment = loan.BasePayment + loan.Additional + loan.Escrow;
@@ -129,18 +157,36 @@ namespace MyFinances.Models
                     loan.Principal -= lp.Base + lp.Additional;
                     lp.Principal = loan.Principal;
                 }
-                loan.PaymentMinYear = loan.LoanPayments.Min(x => x.DatePaid.Year);
-                loan.PaymentMaxYear = loan.LoanPayments.Max(x => x.DatePaid.Year);
-
                 LoanPayment lastPayment = loan.LoanPayments.OrderBy(x => x.DatePaid).LastOrDefault();
                 if (lastPayment != null)
                 {
                     lastPaymentDate = lastPayment.DatePaid;
-                    loan.DueDate = lastPayment.DatePaid.AddMonths(1);
                     loan.LastPaymentDate = lastPayment.DatePaid;
-                    loan.LastPaymentAmount = lastPayment.Additional + lastPayment.Base + lastPayment.Escrow + lastPayment.Interest;
+                    loan.LastPaymentAmount = lastPayment.Payment;
+                    loan.DueDate = lastPayment.DatePaid.AddMonths(1);
+                }
+                if (loan.NotOwner)
+                {
+                    loan.NotOwnerLoanPayments = loan.LoanPayments.Where(x => x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()).OrderBy(x => x.DatePaid).ToList();
+                    if (loan.NotOwnerLoanPayments != null && loan.NotOwnerLoanPayments.Any())
+                    {
+                        lastPayment = loan.NotOwnerLoanPayments.LastOrDefault();
+                        if (lastPayment != null)
+                        {
+                            loan.LastPaymentDate = lastPayment.DatePaid;
+                            loan.LastPaymentAmount = lastPayment.Payment;
+                        }
+                        loan.PaymentMinYear = loan.NotOwnerLoanPayments.Min(x => x.DatePaid.Year);
+                        loan.PaymentMaxYear = loan.NotOwnerLoanPayments.Max(x => x.DatePaid.Year);
+                    } 
+                }
+                else
+                {
+                    loan.PaymentMinYear = loan.LoanPayments.Min(x => x.DatePaid.Year);
+                    loan.PaymentMaxYear = loan.LoanPayments.Max(x => x.DatePaid.Year);
                 }
             }
+            loan.SharedMonthlyPayment = loan.MonthlyPayment / (loan.SharedWith.Count() + 1);
 
             loan.LoanOutlook = loan.GetLoanOutlook(lastPaymentDate);
             if (loan.LoanOutlook.Any()) {
@@ -169,6 +215,7 @@ namespace MyFinances.Models
             loan.Term = l.Term;
             loan.PaymentInterestRate = l.PaymentInterestRate;
             loan.InterestCompound = l.InterestCompound;
+            loan.IsShared = l.IsShared;
             return loan;
         }
 
@@ -238,7 +285,7 @@ namespace MyFinances.Models
                         principal = 0.00;
                     }
 
-                    LoanOutlook item = new LoanOutlook(date, Convert.ToDecimal(interest), Convert.ToDecimal(baseAmount), Convert.ToDecimal(add), loan.Escrow, Convert.ToDecimal(principal));
+                    LoanOutlook item = new LoanOutlook(loan, date, Convert.ToDecimal(interest), Convert.ToDecimal(baseAmount), Convert.ToDecimal(add), loan.Escrow, Convert.ToDecimal(principal));
                     outlook.Add(item);
                 }
                 else
@@ -281,7 +328,7 @@ namespace MyFinances.Models
                         principal = 0.00;
                     }
 
-                    LoanOutlook item = new LoanOutlook(date, Convert.ToDecimal(interest), Convert.ToDecimal(baseAmount), Convert.ToDecimal(add), loan.Escrow, Convert.ToDecimal(principal));
+                    LoanOutlook item = new LoanOutlook(loan, date, Convert.ToDecimal(interest), Convert.ToDecimal(baseAmount), Convert.ToDecimal(add), loan.Escrow, Convert.ToDecimal(principal));
                     outlook.Add(item);
                 }
             }
@@ -322,8 +369,9 @@ namespace MyFinances.Models
 
     public class LoanOutlook
     {
-        public LoanOutlook (DateTime date, decimal interest, decimal baseA, decimal additional, decimal escrow, decimal principal)
+        public LoanOutlook (Loan loan, DateTime date, decimal interest, decimal baseA, decimal additional, decimal escrow, decimal principal)
         {
+            Loan = loan;
             Date = date;
             Interest = interest;
             Base = baseA;
@@ -350,12 +398,22 @@ namespace MyFinances.Models
         [Display(Name = "Payment"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Payment { get { return Interest + Base + Additional + Escrow; } }
 
+        [Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedPayment { get { return Payment / (Loan.SharedWith.Count() + 1);  } }
+
         [Display(Name = "Principal"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Principal { get; set; }
+
+        public Loan Loan { get; set; }
     }
 
     public class LoanPayment : BaseFinances
     {
+        public LoanPayment ()
+        {
+            SharedWith = new Collection<SharedLoanPayment>();
+        }
+
         [Column(TypeName = "money"), DataType(DataType.Currency), Required]
         public decimal Additional { get; set; }
 
@@ -373,10 +431,31 @@ namespace MyFinances.Models
 
         public virtual Loan Loan { get; set; }
 
+        public virtual ICollection<SharedLoanPayment> SharedWith { get; set; }
+
+        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal SharedAmount { get { return Payment / (SharedWith.Count() + 1); } }
+
         [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Principal { get; set; }
 
         [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Payment { get { return Additional + Base + Escrow + Interest; } }
+    }
+    
+    public class SharedLoanPayment : BaseShare
+    {
+        public SharedLoanPayment ()
+        {
+            LoanPayment = new LoanPayment();
+        }
+
+        public SharedLoanPayment (LoanPayment loanPayment, ApplicationUser user)
+        {
+            LoanPayment = loanPayment;
+            SharedWithUser = user;
+        }
+
+        public virtual LoanPayment LoanPayment { get; set; }
     }
 }

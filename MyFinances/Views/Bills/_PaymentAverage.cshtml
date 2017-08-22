@@ -15,11 +15,11 @@
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane fade in active" id="billPaymentHistory">
                     
-                    @if (Model.BillPayments != null && Model.BillPayments.Any())
+                    @if ((Model.NotOwner && Model.NotOwnerBillPayments != null && Model.NotOwnerBillPayments.Any()) || (!Model.NotOwner && Model.BillPayments != null && Model.BillPayments.Any()))
                     {
                         <div class="text-center">
                             <ul class="pagination">
-                                @for (int i = Model.BillPayments.Max(x => x.DatePaid.Year); i >= Model.BillPayments.Min(x => x.DatePaid.Year); i--)
+                                @for (int i = Model.MaxYear; i >= Model.MinYear; i--)
                                 {
                                     <li><a href="#" data-year="@i">@i</a></li>
                                 }
@@ -36,28 +36,54 @@
                                     <th>@Html.DisplayNameFor(model => model.BillPayments.FirstOrDefault().Payee)</th>
                                     <th></th>
                                     <th class="text-right">@Html.DisplayNameFor(model => model.BillPayments.FirstOrDefault().Amount)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(model => model.BillPayments.FirstOrDefault().SharedAmount)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (Model.BillPayments != null && Model.BillPayments.Any())
+                                @if ((Model.NotOwner && Model.NotOwnerBillPayments != null && Model.NotOwnerBillPayments.Any()) || (!Model.NotOwner && Model.BillPayments != null && Model.BillPayments.Any()))
                                 {
-                                    foreach (var item in Model.BillPayments.OrderBy(x => x.DatePaid))
+                                    foreach (var item in (Model.NotOwner) ? Model.NotOwnerBillPayments.ToList() : Model.BillPayments.ToList())
                                     {
                                         <tr class="@(Model.IsActive && Model.LastPaymentDate == item.DatePaid ? "alert-success with-border" : "") hide" id="BillPayment-@item.ID" data-year="@item.DatePaid.Year">
-                                            <th>@Html.ActionLink(item.DatePaid.ToString("MMMM - dd"), "EditPayment", new { ID = item.ID }, new { @class = "datePaid" })</th>
+                                            <th>
+                                                @if (Model.NotOwner)
+                                                {
+                                                    @item.DatePaid.ToString("MMMM - dd")
+                                                }
+                                                else
+                                                {
+                                                    @Html.ActionLink(item.DatePaid.ToString("MMMM - dd"), "EditPayment", new { ID = item.ID }, new { @class = "datePaid" })
+                                                }
+                                            </th>
                                             <td><span class="payee">@Html.DisplayFor(m => item.Payee)</span></td>
                                             <td></td>
                                             <td class="text-right"><span class="amount">@Html.DisplayFor(m => item.Amount)</span></td>
+                                            <td class="text-right"><span class="amount">@Html.DisplayFor(m => item.SharedAmount)</span></td>
                                         </tr>
                                     }
                                 }
                                 @if (Model.IsActive)
                                 {
                                     <tr class="next-payment alert-warning hide" id="BillPayment-0" data-year="@Model.LastPaymentDate.Year">
-                                        <th>@Html.ActionLink(Model.DueDate.ToString("MMMM - dd"), "AddPayment", new { id = Model.ID }, new { @class = "datePaid" })</th>
+                                        <th>
+                                            @if (Model.NotOwner)
+                                            {
+                                                @Model.DueDate.ToString("MMMM - dd")
+                                            }
+                                            else
+                                            {
+                                                @Html.ActionLink(Model.DueDate.ToString("MMMM - dd"), "AddPayment", new { id = Model.ID }, new { @class = "datePaid" })
+                                            }
+                                        </th>
                                         <td><span class="payee">@Html.DisplayFor(m => Model.Payee)</span></td>
-                                        <td>@Html.ActionLink("Paid", "Paid", new { id = Model.ID })</td>
+                                        <td>
+                                            @if (!Model.NotOwner)
+                                            {
+                                                @Html.ActionLink("Paid", "Paid", new { id = Model.ID })
+                                            }
+                                        </td>
                                         <td class="text-right"><span class="amount">@Html.DisplayFor(m => Model.Amount)</span></td>
+                                        <td class="text-right"><span class="amount">@Html.DisplayFor(m => Model.SharedAmount)</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -86,9 +112,9 @@
                                         {
                                             <tr>
                                                 <th>@Html.DisplayFor(m => item.Date)</th>
-                                                <td class="text-right">@Html.DisplayFor(m => item.Min)</td>
-                                                <td class="text-right">@Html.DisplayFor(m => item.Max)</td>
-                                                <td class="text-right">@Html.DisplayFor(m => item.Average)</td>
+                                                <td class="text-right">@Html.DisplayFor(m => item.Min) / @Html.DisplayFor(m => item.MinShared)</td>
+                                                <td class="text-right">@Html.DisplayFor(m => item.Max) / @Html.DisplayFor(m => item.MaxShared)</td>
+                                                <td class="text-right">@Html.DisplayFor(m => item.Average) / @Html.DisplayFor(m => item.AverageShared)</td>
                                             </tr>
                                         }
                                     }
@@ -96,9 +122,9 @@
                                 <tfoot>
                                     <tr>
                                         <th></th>
-                                        <th class="text-right">@Html.DisplayFor(model => model.MinPaid)</th>
-                                        <th class="text-right">@Html.DisplayFor(model => model.MaxPaid)</th>
-                                        <th class="text-right">@Html.DisplayFor(model => model.AveragePaid)</th>
+                                        <th class="text-right">@Html.DisplayFor(model => model.MinPaid) / @Html.DisplayFor(model => model.MinPaidShared)</th>
+                                        <th class="text-right">@Html.DisplayFor(model => model.MaxPaid) / @Html.DisplayFor(model => model.MaxPaidShared)</th>
+                                        <th class="text-right">@Html.DisplayFor(model => model.AveragePaid) / @Html.DisplayFor(model=> model.AveragePaidShared)</th>
                                     </tr>
                                 </tfoot>
                             </table>

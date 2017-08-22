@@ -37,12 +37,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.AI.Agent.Intercept, Version=2.0.6.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -197,6 +198,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\BillsController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -212,6 +214,22 @@
     <Compile Include="Migrations\201704040325549_UpdateBill.cs" />
     <Compile Include="Migrations\201704040325549_UpdateBill.Designer.cs">
       <DependentUpon>201704040325549_UpdateBill.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708190016430_SharedBills.cs" />
+    <Compile Include="Migrations\201708190016430_SharedBills.Designer.cs">
+      <DependentUpon>201708190016430_SharedBills.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708190030286_SharedLoans.cs" />
+    <Compile Include="Migrations\201708190030286_SharedLoans.Designer.cs">
+      <DependentUpon>201708190030286_SharedLoans.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708191647580_UserObject.cs" />
+    <Compile Include="Migrations\201708191647580_UserObject.Designer.cs">
+      <DependentUpon>201708191647580_UserObject.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708220329477_LoansIsShared.cs" />
+    <Compile Include="Migrations\201708220329477_LoansIsShared.Designer.cs">
+      <DependentUpon>201708220329477_LoansIsShared.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\AddLoans.cs" />
     <Compile Include="Migrations\AddLoans.Designer.cs">
@@ -300,6 +318,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\Base\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -318,6 +337,18 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201704040325549_UpdateBill.resx">
       <DependentUpon>201704040325549_UpdateBill.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708190016430_SharedBills.resx">
+      <DependentUpon>201708190016430_SharedBills.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708190030286_SharedLoans.resx">
+      <DependentUpon>201708190030286_SharedLoans.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708191647580_UserObject.resx">
+      <DependentUpon>201708191647580_UserObject.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708220329477_LoansIsShared.resx">
+      <DependentUpon>201708220329477_LoansIsShared.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\AddLoans.resx">
       <DependentUpon>AddLoans.cs</DependentUpon>
