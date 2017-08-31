@@ -94,55 +94,19 @@ namespace MyFinances.Models
 
     public static class BillHelpers
     {
-        public static List<Bill> Populate (this List<Bill> bills, ApplicationUser user, bool notOwner = false)
+        public static List<Bill> Populate (this List<Bill> bills, ApplicationUser user)
         {
             List<Bill> newBills = new List<Bill>();
             foreach (Bill bill in bills)
             {
-                newBills.Add(bill.Populate(user, notOwner));
+                newBills.Add(bill.Populate(user));
             }
             return newBills;
         }
 
-        public static List<DashboardItem> GetDashboardItems (this IEnumerable<Bill> bills, DashboardDateRange range, ApplicationUser user)
+        public static Bill Populate(this Bill bill, ApplicationUser user)
         {
-            List<DashboardItem> items = new List<DashboardItem>();
-            foreach (Bill bill in bills)
-            {
-                if (bill.DueDate >= range.StartDate && bill.DueDate <= range.EndDate)
-                {
-                    items.Add(new DashboardItem(bill));
-                }
-
-                DateTime date = bill.DueDate;
-                while (date <= range.EndDate)
-                {
-                    Tuple<DateTime, decimal> newDateAmount = bill.GetDateAmount(bill.GetNextDate(date, user),  bill.Amount);
-                    date = newDateAmount.Item1;
-                    if (newDateAmount.Item1 >= range.StartDate && date <= range.EndDate)
-                    {
-                        DashboardItem item = new DashboardItem(bill);
-                        item.Date = date;
-                        item.Amount = newDateAmount.Item2;
-                        item.SharedAmount = item.Amount / (bill.SharedWith.Count() + 1);
-                        items.Add(item);
-                    }
-                }
-
-                if (bill.BillPayments.Any())
-                {
-                    items.AddRange(bill.BillPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate)
-                        .Where(x => x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any())
-                        .Select(x => new DashboardItem(x)));
-                }
-            }
-
-            return items;
-        }
-
-        public static Bill Populate(this Bill bill, ApplicationUser user, bool notOwner = false)
-        {
-            bill.NotOwner = notOwner;
+            bill.NotOwner = bill.User.Id != user.Id;
             bill.SharedAmount = bill.Amount / (bill.SharedWith.Count() + 1);
 
             if (bill.BillPayments != null && bill.BillPayments.Any())
@@ -187,6 +151,43 @@ namespace MyFinances.Models
             bill.Classes = GetClasses(bill.IsActive, isPastDue, dueInDays);
 
             return bill;
+        }
+        
+        public static List<DashboardItem> GetDashboardItems (this IEnumerable<Bill> bills, DashboardDateRange range, ApplicationUser user)
+        {
+            List<DashboardItem> items = new List<DashboardItem>();
+            foreach (Bill bill in bills)
+            {
+                if (bill.DueDate >= range.StartDate && bill.DueDate <= range.EndDate)
+                {
+                    items.Add(new DashboardItem(bill));
+                }
+
+                DateTime date = bill.DueDate;
+                while (date <= range.EndDate)
+                {
+                    Tuple<DateTime, decimal> newDateAmount = bill.GetDateAmount(bill.GetNextDate(date, user),  bill.Amount);
+                    date = newDateAmount.Item1;
+                    if (newDateAmount.Item1 >= range.StartDate && date <= range.EndDate)
+                    {
+                        DashboardItem item = new DashboardItem(bill);
+                        item.Date = date;
+                        item.Amount = newDateAmount.Item2;
+                        item.SharedAmount = item.Amount / (bill.SharedWith.Count() + 1);
+                        items.Add(item);
+                    }
+                }
+
+                if (bill.BillPayments.Any())
+                {
+                    items.AddRange(bill.BillPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate)
+                        .Where(x => x.User.Id == user.Id || (x.Bill.IsShared && x.SharedWith.Any() && x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()))
+                        .Select(x => new DashboardItem(x, user)));
+
+                }
+            }
+
+            return items;
         }
 
         public static Bill MapSubmit (this Bill bill, Bill b)

@@ -28,7 +28,7 @@ footer p {
 
 .navbar-inverse {
     color: #999;
-    box-shadow: 0 0px 10px 5px rgba(0,0,0,.5);
+    box-shadow: 0 0 10px 5px rgba(0,0,0,.5);
 }
 
 .navbar {
@@ -132,15 +132,15 @@ footer p {
     border: 0;
 }
 
-.table > tbody > tr.alert-info th, 
-.table > tbody > tr.alert-info td {
+.table > tbody > tr.alert-info:not(.not-owner) th, 
+.table > tbody > tr.alert-info:not(.not-owner) td {
     font-style: italic;
     font-weight: bold;
     font-size: 1.2em;
 }
 
-.table > tbody > tr.alert-info th, 
-.table > tbody > tr.alert-info td,
+.table > tbody > tr.alert-info:not(.not-owner) th, 
+.table > tbody > tr.alert-info:not(.not-owner) td,
 .table > tbody > tr.next-payment th, 
 .table > tbody > tr.next-payment td, 
 .table > tbody > tr.alert-success.with-border th, 

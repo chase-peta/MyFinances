@@ -112,12 +112,12 @@ namespace MyFinances.Models
 
     public static class LoanHelpers
     {
-        public static List<Loan> Populate (this List<Loan> loans, ApplicationUser user, bool notOwner = false)
+        public static List<Loan> Populate (this List<Loan> loans, ApplicationUser user)
         {
             List<Loan> newLoans = new List<Loan>();
             foreach (Loan loan in loans)
             {
-                newLoans.Add(loan.Populate(user, notOwner));
+                newLoans.Add(loan.Populate(user));
             }
             return newLoans;
         }
@@ -134,16 +134,16 @@ namespace MyFinances.Models
 
                 if (loan.LoanPayments.Any())
                 {
-                    items.AddRange(loan.LoanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x)));
+                    items.AddRange(loan.LoanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
                 }
             }
 
             return items;
         }
 
-        public static Loan Populate (this Loan loan, ApplicationUser user, bool notOwner = false)
+        public static Loan Populate (this Loan loan, ApplicationUser user)
         {
-            loan.NotOwner = notOwner;
+            loan.NotOwner = loan.User.Id != user.Id;
             loan.DueDate = loan.FirstPaymentDate;
             loan.BasePayment = loan.CalculateMonthlyPayment();
             loan.MonthlyPayment = loan.BasePayment + loan.Additional + loan.Escrow;

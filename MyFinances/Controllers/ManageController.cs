@@ -94,7 +94,7 @@ namespace MyFinances.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<ActionResult> UpdateProfile([Bind(Include = "FirstName,LastName,PaycheckFrequency,FirstDate,SecondDate")] ApplicationUser model)
+        public async Task<ActionResult> UpdateProfile([Bind(Include = "FirstName,LastName,PaycheckFrequency,FirstDate,SecondDate,FirstPaycheck,SecondPaycheck")] ApplicationUser model)
         {
             if (!ModelState.IsValid)
             {
@@ -107,6 +107,8 @@ namespace MyFinances.Controllers
             user.PaycheckFrequency = model.PaycheckFrequency;
             user.FirstDate = model.FirstDate;
             user.SecondDate = model.SecondDate;
+            user.FirstPaycheck = model.FirstPaycheck;
+            user.SecondPaycheck = model.SecondPaycheck;
             var result = await UserManager.UpdateAsync(user);
             if (result.Succeeded)
             {

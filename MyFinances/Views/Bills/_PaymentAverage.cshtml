@@ -42,7 +42,7 @@
                             <tbody>
                                 @if ((Model.NotOwner && Model.NotOwnerBillPayments != null && Model.NotOwnerBillPayments.Any()) || (!Model.NotOwner && Model.BillPayments != null && Model.BillPayments.Any()))
                                 {
-                                    foreach (var item in (Model.NotOwner) ? Model.NotOwnerBillPayments.ToList() : Model.BillPayments.ToList())
+                                    foreach (var item in (Model.NotOwner) ? Model.NotOwnerBillPayments.OrderBy(x => x.DatePaid).ToList() : Model.BillPayments.OrderBy(x => x.DatePaid).ToList())
                                     {
                                         <tr class="@(Model.IsActive && Model.LastPaymentDate == item.DatePaid ? "alert-success with-border" : "") hide" id="BillPayment-@item.ID" data-year="@item.DatePaid.Year">
                                             <th>

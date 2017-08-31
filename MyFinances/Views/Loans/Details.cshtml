@@ -135,14 +135,13 @@
 
                             </div>
                         </div>
-
-                        if (ViewBag.Action == "Edit")
-                        {
-                            <div class="margin-bottom-20">
-                                <div class="pull-right">
-                                    <input type="submit" name="button" value="Calculate" class="btn btn-success" />
-                                    <input type="submit" name="button" value="Save" class="btn btn-primary" />
-                                </div>
+                        <div class="margin-bottom-20">
+                            <div class="pull-right">
+                                <input type="submit" name="button" value="Calculate" class="btn btn-success" />
+                                <input type="submit" name="button" value="Save" class="btn btn-primary" />
+                            </div>
+                            @if (ViewBag.Action == "Edit")
+                            {
                                 @Html.ActionLink("Deactivate", "Deactivate", new { id = Model.ID }, new
                                 {
                                     @class = "btn btn-danger confirmation",
@@ -153,8 +152,8 @@
                                     data_placement = "right",
                                     title = "Will set to NOT active - Payments will NOT be deleted"
                                 })
-                            </div>
-                        }
+                            }
+                        </div>
                     }
                 }
                 else

@@ -32,8 +32,17 @@ namespace MyFinances.Models
         
         [Display(Name = "First Date"), DataType(DataType.Date), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true), Required]
         public DateTime FirstDate { get; set; }
+
         [Display(Name = "Second Date"), DataType(DataType.Date), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true), Required]
         public DateTime SecondDate { get; set; }
+
+        [Display(Name = "First Paycheck"), Column(TypeName = "money"), DataType(DataType.Currency), Required]
+        public decimal FirstPaycheck { get; set; }
+
+        [Display(Name = "Second Paycheck"), Column(TypeName = "money"), DataType(DataType.Currency), Required]
+        public decimal SecondPaycheck { get; set; }
+
+        //public Income PrimaryIncome { get; set; }
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
@@ -50,6 +59,8 @@ namespace MyFinances.Models
         public DbSet<SharedLoan> SharedLoan { get; set;}
         public DbSet<LoanPayment> LoanPayments { get; set; }
         public DbSet<SharedLoanPayment> SharedLoanPayment { get; set; }
+        //public DbSet<Income> Incomes { get; set; }
+        //public DbSet<IncomePayment> IncomePayments { get; set; }
 
         protected override void OnModelCreating (DbModelBuilder modelBuilder)
         {

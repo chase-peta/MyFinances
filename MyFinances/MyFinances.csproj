@@ -315,10 +315,14 @@
     <Content Include="Views\Dashboard\Index.cshtml" />
     <Content Include="Views\Manage\UpdateProfile.cshtml" />
     <Content Include="Views\Dashboard\History.cshtml" />
+    <Content Include="Views\Income\Index.cshtml" />
+    <Content Include="Views\Income\Details.cshtml" />
+    <Content Include="Views\Income\Payment.cshtml" />
+    <Content Include="Views\Income\_PaymentAverage.cshtml" />
+    <Content Include="Views\Income\_IncomeInfo.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\Base\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff" />

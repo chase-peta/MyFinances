@@ -1,0 +1,174 @@
+﻿@model MyFinances.Models.Income
+
+@{ ViewBag.Title = ((ViewBag.Action != "Create") ? Model.Name : ViewBag.Action) + " Income"; }
+
+<div class="clear-after">
+    <div class="pull-right">
+        @if (ViewBag.Action == "Edit")
+        {
+            @Html.ActionLink("Back to Income", "Details", new { ID = Model.ID }, new { @class = "btn btn-danger" })
+        }
+        else
+        {
+            @Html.ActionLink("Back to all Incomes", "Index", null, new { @class = "btn btn-primary" })
+        }
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+<div class="row">
+    <div class="col-xs-12 col-md-4">
+        <div class="row">
+            <div class="col-xs-12 col-sm-6 col-md-12">
+                @if (ViewBag.Action != "Details")
+                {
+                    using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true)
+                        @Html.HiddenFor(model => model.ID)
+
+                        <div id="IncomeForm" class="margin-bottom-20">
+                            <div class="update-form standard">
+                                    
+                                <div class="row">
+                                    <div class="col-xs-12 col-lg-6">
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Name, new { @class = "control-label" })
+                                            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                                            @Html.ValidationMessageFor(model => model.Name)
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-12 col-lg-6">
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.PaymentFrequency, new { @class = "control-label" })
+                                            @Html.EnumDropDownListFor(model => model.PaymentFrequency, "Select Payment Frequency", new { @class = "form-control" })
+                                            @Html.ValidationMessageFor(model => model.PaymentFrequency)
+                                        </div>
+                                    </div>
+                                    <div class="clearfix"></div>
+
+                                    <div class="col-xs-12 col-lg-6">
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Date, new { @class = "control-label" })
+                                            @Html.EditorFor(model => model.Date, new { htmlAttributes = new { @class = "form-control" } })
+                                            @Html.ValidationMessageFor(model => model.Date)
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Amount, new { @class = "control-label" })
+                                            @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control" } })
+                                            @Html.ValidationMessageFor(model => model.Amount)
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-12 col-lg-6">
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.SecondDate, new { @class = "control-label" })
+                                            @Html.EditorFor(model => model.SecondDate, new { htmlAttributes = new { @class = "form-control" } })
+                                            @Html.ValidationMessageFor(model => model.SecondDate)
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.SecondAmount, new { @class = "control-label" })
+                                            @Html.EditorFor(model => model.SecondAmount, new { htmlAttributes = new { @class = "form-control" } })
+                                            @Html.ValidationMessageFor(model => model.SecondAmount)
+                                        </div>
+                                    </div>
+                                </div>
+                                    
+                            </div>
+                        </div>
+
+                        <div class="margin-bottom-20">
+                            <input type="submit" value="Save" class="btn btn-primary pull-right" />
+
+                            @Html.ActionLink("Deactivate", "Deactivate", new { id = Model.ID }, new
+                            {
+                                @class = "btn btn-danger confirmation",
+                                data_confirm_title = "Deactivate " + Model.Name + " Bill",
+                                data_confirm_message = "Are you sure you want to deactivate deactivate " + Model.Name + " Income?",
+                                data_confirm_style = "danger",
+                                data_toggle = "tooltip",
+                                data_placement = "right",
+                                title = "Will set to NOT active - Payments will NOT be deleted"
+                            })
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="tab-content margin-bottom-20">
+                        <div class="table-container">
+                            <table class="table table-striped">
+                                <tbody>
+                                    @if (Model.UseSecond)
+                                    {
+                                        <tr>
+                                            <th>@Html.DisplayNameFor(model => model.Amount)</th>
+                                            <td>@Html.DisplayFor(model => model.SecondAmount)</td>
+                                        </tr>
+                                        <tr>
+                                            <th>@Html.DisplayNameFor(model => model.Date)</th>
+                                            <td>@Html.DisplayFor(model => model.SecondDate)</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <th>@Html.DisplayNameFor(model => model.Amount)</th>
+                                            <td>@Html.DisplayFor(model => model.Amount)</td>
+                                        </tr>
+                                        <tr>
+                                            <th>@Html.DisplayNameFor(model => model.Date)</th>
+                                            <td>@Html.DisplayFor(model => model.Date)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    if (ViewBag.Action != "Create")
+                    {
+                        <div class="text-right margin-bottom-20">
+                            @if (Model.IsActive)
+                            {
+                                @Html.ActionLink("Add Payment", "AddPayment", new { ID = Model.ID }, new { @class = "btn btn-success" })
+                                @Html.ActionLink("Edit Income", "Edit", new { ID = Model.ID }, new { @class = "btn btn-primary" })
+                            }
+                            else
+                            {
+                                @Html.ActionLink("Delete", "Delete", new { ID = Model.ID }, new
+                                {
+                                    @class = "btn btn-danger confirmation pull-left",
+                                    data_confirm_title = "Permanently Delete " + Model.Name + " Income",
+                                    data_confirm_message = "Are you sure you want to permanently delete " + Model.Name + " Income?<br><strong>All payments will be deleted with deletion.</strong>",
+                                    data_confirm_style = "danger",
+                                    data_toggle = "tooltip",
+                                    data_placement = "right",
+                                    title = "Will delete - Payments WILL BE DELETED"
+                                })
+
+                                @Html.ActionLink("Activate", "Activate", new { ID = Model.ID }, new
+                                {
+                                    @class = "btn btn-success confirmation",
+                                    data_confirm_title = "Activate " + Model.Name + " Income",
+                                    data_confirm_message = "Are you sure you want to activate " + Model.Name + " Income?",
+                                    data_confirm_style = "success",
+                                    data_toggle = "tooltip",
+                                    data_placement = "left",
+                                    title = "Set Active"
+                                })
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            @Html.Partial("_IncomeInfo")
+        </div>
+    </div>
+
+    @Html.Partial("_PaymentAverage")
+</div>

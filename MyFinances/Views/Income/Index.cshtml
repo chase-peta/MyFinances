@@ -1,0 +1,80 @@
+﻿@model IEnumerable<MyFinances.Models.Income>
+
+@{ ViewBag.Title = "Income"; }
+
+<div class="clear-after">
+    <div class="pull-right">
+        @Html.ActionLink("Add Income", "Create", null, new { @class = "btn btn-primary" })
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+        @if (Model.Any())
+        {
+            <div class="tab-content">
+                <div class="table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>@Html.DisplayNameFor(m => m.Name)</th>
+                                <th class="text-right">@Html.DisplayNameFor(m => m.Amount)</th>
+                                <th>@Html.DisplayNameFor(m => m.Date)</th>
+                                <th>@Html.DisplayNameFor(m => m.DueIn)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (MyFinances.Models.Income item in Model)
+                            {
+                                <tr class="@item.Classes">
+                                    <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", new { ID = item.ID })</th>
+                                    <td class="text-right">
+                                        @if (item.UseSecond)
+                                        {
+                                            @Html.DisplayFor(m => item.SecondAmount)
+                                        }
+                                        else
+                                        {
+                                            @Html.DisplayFor(m => item.Amount)
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.UseSecond)
+                                        {
+                                            @item.SecondDate.ToString("MMMM - dd")
+                                        }
+                                        else
+                                        {
+                                            @item.Date.ToString("MMMM - dd")
+                                        }
+                                    </td>
+                                    <td>@Html.DisplayFor(m => item.DueIn)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="margin-top-20 clearfix">
+                <div class="pull-right">
+                    @if (ViewBag.ShowInactive)
+                    {
+                        @Html.ActionLink("Hide Inactive", "Index", null, new { @class = "btn btn-primary" })
+                    }
+                    else
+                    {
+                        @Html.ActionLink("Show Inactive", "Index", new { showInactive = true }, new { @class = "btn btn-primary" })
+                    }
+                </div>
+                @Html.ActionLink("Chooase Primary Income", "ChoosePrimaryIncome", null, new { @class = "btn btn-success" })
+                @ViewBag.PrimaryIncome
+            </div>
+        }
+        else
+        {
+            <p>You currently don't have any incomes to show. You can @Html.ActionLink("add an income", "Create").</p>
+        }
+    </div>
+</div>

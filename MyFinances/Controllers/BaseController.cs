@@ -65,13 +65,9 @@ namespace MyFinances.Controllers
             {
                 return null;
             }
-            else if (bill.User.Id == user.Id)
+            else if (bill.User.Id == user.Id || bill.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null)
             {
                 bill = bill.Populate(user);
-            }
-            else if (bill.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null)
-            {
-                bill = bill.Populate(user, true);
             } else
             {
                 return null;
@@ -96,10 +92,10 @@ namespace MyFinances.Controllers
         {
             if (showInactive)
             {
-                return db.Loans.Where(x => x.User.Id == user.Id).Include(x => x.LoanPayments).OrderBy(x => x.IsActive).ThenBy(x => x.DueDate).ToList().Populate(user);
+                return db.Loans.Where(x => x.User.Id == user.Id).Include(x => x.LoanPayments).ToList().Populate(user).OrderBy(x => x.IsActive).ThenBy(x => x.DueDate).ToList();
             }
 
-            return db.Loans.Where(x => x.User.Id == user.Id && x.IsActive).Include(x => x.LoanPayments).OrderBy(x => x.DueDate).ToList().Populate(user);
+            return db.Loans.Where(x => x.User.Id == user.Id && x.IsActive).Include(x => x.LoanPayments).ToList().Populate(user).OrderBy(x => x.DueDate).ToList();
         }
 
         protected Loan GetLoan (int? id)
@@ -109,13 +105,9 @@ namespace MyFinances.Controllers
             {
                 return null;
             }
-            else if (loan.User.Id == user.Id)
+            else if (loan.User.Id == user.Id || loan.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null)
             {
                 loan = loan.Populate(user);
-            }
-            else if (loan.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null)
-            {
-                loan = loan.Populate(user, true);
             }
             else
             {
@@ -136,7 +128,56 @@ namespace MyFinances.Controllers
         }
 
 
-        
+
+        /*protected List<Income> GetIncomes(bool showInactive)
+        {
+            if (showInactive)
+            {
+                return db.Incomes.Where(x => x.User.Id == user.Id).Include(x => x.IncomePayments).ToList().Populate(user).OrderBy(x => x.IsActive).ThenBy(x => x.Date).ToList();
+            }
+
+            return db.Incomes.Where(x => x.User.Id == user.Id && x.IsActive).Include(x => x.IncomePayments).ToList().Populate(user).OrderBy(x => x.Date).ToList();
+        }
+
+        protected Income GetIncome(int? id)
+        {
+            Income income = db.Incomes.Find(id);
+            if (income == null)
+            {
+                return null;
+            }
+            else if (income.User.Id == user.Id)
+            {
+                income = income.Populate(user);
+            }
+            else
+            {
+                return null;
+            }
+            return income;
+        }
+
+        protected IncomePayment GetIncomePayment (int? id)
+        {
+            IncomePayment incomePayment = db.IncomePayments.Find(id);
+            if (incomePayment == null || incomePayment.User.Id != user.Id)
+            {
+                return null;
+            }
+            return incomePayment;
+        }
+
+        protected Income GetPrimaryIncome()
+        {
+            if (user.PrimaryIncome != null)
+            {
+                return user.PrimaryIncome.Populate(user);
+            }
+            return null;
+        }*/
+
+
+
         protected void UpdateBillShared (Bill bill, string[] payeeId)
         {
             if (bill.SharedWith != null)

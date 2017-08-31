@@ -235,7 +235,7 @@ namespace Finances.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Bill bill = db.Bills.Find(id).Populate(user);
+            Bill bill = GetBill(id);
             if (bill == null || bill.User.Id != user.Id)
             {
                 return HttpNotFound();
@@ -246,12 +246,12 @@ namespace Finances.Controllers
             billPayment.Amount = bill.Amount;
             billPayment.DatePaid = bill.DueDate;
             billPayment.Payee = bill.Payee;
+            billPayment.User = db.Users.Find(user.Id);
 
             db.BillPayments.Add(billPayment);
             if (billPayment.Bill.IsShared && billPayment.Bill.SharedWith.Count() > 0)
             {
-                List<ApplicationUser> users = GetAvailableUsers(bill);
-                users.ForEach(x => db.SharedBillPayment.Add(new SharedBillPayment(billPayment, x)));
+                GetAvailableUsers(bill).ForEach(x => db.SharedBillPayment.Add(new SharedBillPayment(billPayment, x)));
             }
             db.Entry(saveBillForNextPayment(billPayment)).State = EntityState.Modified;
             db.SaveChanges();

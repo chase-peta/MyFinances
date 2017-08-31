@@ -10,10 +10,14 @@
 
 <div class="clear-after">
     <div class="pull-right">
+        <ul class="pagination" style="margin: 0; margin-right: 10px;">
+            <li class="@(!Model.DisplayMonth ? "active" : "")">@Html.ActionLink("Payment Frequency", "History", new { year = Model.CurrentYear, displayMonth = false })</li>
+            <li class="@(Model.DisplayMonth ? "active" : "")">@Html.ActionLink("Monthly", "History", new { year = Model.CurrentYear, displayMonth = true })</li>
+        </ul>
         <ul class="pagination" style="margin: 0;">
             @for (int i = Model.EndYear; i >= Model.StartYear; i--)
             {
-                <li class="@(@Model.CurrentYear == i ? "active" : "")">@Html.ActionLink(i.ToString(), "History", new { year = i })</li>
+                <li class="@(@Model.CurrentYear == i ? "active" : "")">@Html.ActionLink(i.ToString(), "History", new { year = i, displayMonth = Model.DisplayMonth })</li>
             }
         </ul>
     </div>
@@ -25,7 +29,7 @@
     @foreach (MyFinances.Models.DashboardDateRange range in Model.DateRanges)
     {
         count += 1;
-        <div class="col-sm-6">
+        <div class="col-lg-6">
 
             <div class="panel with-nav-tabs panel-primary">
                 <div class="panel-heading clearfix">
@@ -38,7 +42,6 @@
                 </div>
 
                 <div class="tab-content">
-
                     <div class="tab-pane fade in active" id="tableTab-@count">
                         <div class="table-container">
                             <table class="table table-striped" id="Dashboard-Table-@count">
@@ -46,20 +49,28 @@
                                     <tr>
                                         <th>@Html.DisplayNameFor(m => range.Items.First().Name)</th>
                                         <th>@Html.DisplayNameFor(m => range.Items.First().Date)</th>
+                                        <th></th>
                                         <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().Amount)</th>
+                                        <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().SharedAmount)</th>
                                     </tr>
                                 </thead>
                                 @foreach (MyFinances.Models.DashboardItem item in range.Items)
                                 {
-                                    <tr>
+                                    <tr class="@(item.Classes == "alert-success" ? "" : item.Classes)">
                                         <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", item.Type + "s", new { id = item.Id }, null)</th>
                                         <td>@Html.DisplayFor(m => item.Date)</td>
+                                        <td></td>
                                         <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
+                                        <td class="text-right">@Html.DisplayFor(m => item.SharedAmount)</td>
                                     </tr>
                                 }
                                 <tfoot>
                                     <tr>
-                                        <th class="text-right" colspan="5">@Html.DisplayNameFor(x => range.Total): <span class="total">@Html.DisplayFor(x => range.Total)</span></th>
+                                        <th class="alert-info not-owner">@Html.DisplayNameFor(x => range.NotOwnerTotal):</th>
+                                        <th class="alert-info not-owner"><span class="total">@Html.DisplayFor(x => range.NotOwnerTotal)</span></th>
+                                        <th class="text-right">@Html.DisplayNameFor(x => range.Total):</th>
+                                        <th class="text-right"> <span class="total">@Html.DisplayFor(x => range.Total)</span></th>
+                                        <th class="text-right"><span class="total">@Html.DisplayFor(x => range.SharedTotal)</span></th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -69,11 +80,8 @@
                     <div class="tab-pane fade" id="graghTab-@count">
                         <div id="chart-@count" style="height: 400px; width: 100%;"></div>
                     </div>
-
                 </div>
-
             </div>
-
         </div>
         <script>
             charts.push({
@@ -83,7 +91,7 @@
                 data: [
                     @foreach (MyFinances.Models.DashboardItem item in range.Items)
                     {
-                        @:{ y: @item.Amount, indexLabel: "@item.Name" },
+                        @:{ y: @item.SharedAmount, indexLabel: "@item.Name" },
                     }
                 ]
             });

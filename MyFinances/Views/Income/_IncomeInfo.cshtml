@@ -1,0 +1,35 @@
+﻿@model MyFinances.Models.Income
+
+<div class="col-xs-12 col-sm-6 col-md-12">
+    @if (ViewBag.Action != "Create")
+    {
+        if (Model.IncomePayments != null && Model.IncomePayments.Any())
+        {
+            if (Model.IsActive)
+            {
+                <h2>Last Payment</h2>
+                <div class="tab-content margin-bottom-20">
+                    <div class="table-container alert-success">
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(model => model.LastPaymentDate)</th>
+                                    <td>@Html.DisplayFor(model => model.LastPaymentDate)</td>
+                                </tr>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(model => model.LastPaymentAmount)</th>
+                                    <td>@Html.DisplayFor(model => model.LastPaymentAmount)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="alert alert-warning">There are currently no payments for this income.</p>
+        }
+    }
+</div>
+

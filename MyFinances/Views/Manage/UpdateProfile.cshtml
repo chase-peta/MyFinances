@@ -37,34 +37,52 @@
                 </div>
 
                 <div class="row">
-                    <div class="form-group col-xs-12 col-sm-6">
-                        @Html.LabelFor(model => model.FirstDate, new { htmlAttributes = new { @class = "control-label" } })
-                        @Html.EditorFor(model => model.FirstDate, new { htmlAttributes = new { @class = "form-control" } })
-                        @Html.ValidationMessageFor(model => model.FirstDate)
-                        <ul>
-                            <li><strong>Weekly:</strong> Every 7 Days</li>
-                            <li><strong>BiWeekly:</strong> Every 14 Days</li>
-                            <li><strong>SemiMonthly:</strong> First Payday of Month</li>
-                            <li><strong>Monthly:</strong> Only Payday of Month</li>
-                            <li><strong>BiMonthly:</strong> Payday of Month</li>
-                            <li><strong>SemiYearly:</strong> Every 6 Months</li>
-                            <li><strong>Yearly:</strong> Once a Year</li>
-                        </ul>
-                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.FirstDate, new { htmlAttributes = new { @class = "control-label" } })
+                            @Html.EditorFor(model => model.FirstDate, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.FirstDate)
+                            <ul>
+                                <li><strong>Weekly:</strong> Every 7 Days</li>
+                                <li><strong>BiWeekly:</strong> Every 14 Days</li>
+                                <li><strong>SemiMonthly:</strong> First Payday of Month</li>
+                                <li><strong>Monthly:</strong> Only Payday of Month</li>
+                                <li><strong>BiMonthly:</strong> Payday of Month</li>
+                                <li><strong>SemiYearly:</strong> Every 6 Months</li>
+                                <li><strong>Yearly:</strong> Once a Year</li>
+                            </ul>
+                        </div>
 
-                    <div class="form-group col-xs-12 col-sm-6">
-                        @Html.LabelFor(model => model.SecondDate, new { htmlAttributes = new { @class = "control-label" } })
-                        @Html.EditorFor(model => model.SecondDate, new { htmlAttributes = new { @class = "form-control" } })
-                        @Html.ValidationMessageFor(model => model.SecondDate)
-                        <ul>
-                            <li><strong>Weekly:</strong> Not Used</li>
-                            <li><strong>BiWeekly:</strong> Not Used</li>
-                            <li><strong>SemiMonthly:</strong> Second Payday of Month</li>
-                            <li><strong>Monthly:</strong> Not Used</li>
-                            <li><strong>BiMonthly:</strong> Not Used</li>
-                            <li><strong>SemiYearly:</strong> Not Used</li>
-                            <li><strong>Yearly:</strong> Not Used</li>
-                        </ul>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.FirstPaycheck, new { htmlAttributes = new { @class = "conrol-label" } })
+                            @Html.EditorFor(model => model.FirstPaycheck, new { htmlAttributes = new { @class = "form-control"} })
+                            @Html.ValidationMessageFor(model => model.FirstPaycheck)
+                        </div>
+                    </div>
+                    
+
+
+                    <div class="col-xs-12 col-sm-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.SecondDate, new { htmlAttributes = new { @class = "control-label" } })
+                            @Html.EditorFor(model => model.SecondDate, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.SecondDate)
+                            <ul>
+                                <li><strong>Weekly:</strong> Not Used</li>
+                                <li><strong>BiWeekly:</strong> Not Used</li>
+                                <li><strong>SemiMonthly:</strong> Second Payday of Month</li>
+                                <li><strong>Monthly:</strong> Not Used</li>
+                                <li><strong>BiMonthly:</strong> Not Used</li>
+                                <li><strong>SemiYearly:</strong> Not Used</li>
+                                <li><strong>Yearly:</strong> Not Used</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.SecondPaycheck, new { htmlAttributes = new { @class = "conrol-label" } })
+                            @Html.EditorFor(model => model.SecondPaycheck, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.SecondPaycheck)
+                        </div>
                     </div>
                 </div>
 
