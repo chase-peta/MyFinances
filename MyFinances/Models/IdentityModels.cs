@@ -59,8 +59,8 @@ namespace MyFinances.Models
         public DbSet<SharedLoan> SharedLoan { get; set;}
         public DbSet<LoanPayment> LoanPayments { get; set; }
         public DbSet<SharedLoanPayment> SharedLoanPayment { get; set; }
-        //public DbSet<Income> Incomes { get; set; }
-        //public DbSet<IncomePayment> IncomePayments { get; set; }
+        public DbSet<Income> Incomes { get; set; }
+        public DbSet<IncomePayment> IncomePayments { get; set; }
 
         protected override void OnModelCreating (DbModelBuilder modelBuilder)
         {

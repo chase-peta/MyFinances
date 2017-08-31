@@ -129,7 +129,7 @@ namespace MyFinances.Controllers
 
 
 
-        /*protected List<Income> GetIncomes(bool showInactive)
+        protected List<Income> GetIncomes(bool showInactive)
         {
             if (showInactive)
             {
@@ -167,7 +167,7 @@ namespace MyFinances.Controllers
             return incomePayment;
         }
 
-        protected Income GetPrimaryIncome()
+        /*protected Income GetPrimaryIncome()
         {
             if (user.PrimaryIncome != null)
             {

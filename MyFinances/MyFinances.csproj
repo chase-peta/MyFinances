@@ -202,6 +202,7 @@
     <Compile Include="Controllers\BillsController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\IncomeController.cs" />
     <Compile Include="Controllers\LoansController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Global.asax.cs">
@@ -231,6 +232,14 @@
     <Compile Include="Migrations\201708220329477_LoansIsShared.Designer.cs">
       <DependentUpon>201708220329477_LoansIsShared.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201708282249238_User-Paychecks.cs" />
+    <Compile Include="Migrations\201708282249238_User-Paychecks.Designer.cs">
+      <DependentUpon>201708282249238_User-Paychecks.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708310322305_AddIncomes.cs" />
+    <Compile Include="Migrations\201708310322305_AddIncomes.Designer.cs">
+      <DependentUpon>201708310322305_AddIncomes.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\AddLoans.cs" />
     <Compile Include="Migrations\AddLoans.Designer.cs">
       <DependentUpon>AddLoans.cs</DependentUpon>
@@ -247,6 +256,7 @@
     <Compile Include="Models\Bill.cs" />
     <Compile Include="Models\DashboardViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\Income.cs" />
     <Compile Include="Models\Loan.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
@@ -353,6 +363,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201708220329477_LoansIsShared.resx">
       <DependentUpon>201708220329477_LoansIsShared.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708282249238_User-Paychecks.resx">
+      <DependentUpon>201708282249238_User-Paychecks.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708310322305_AddIncomes.resx">
+      <DependentUpon>201708310322305_AddIncomes.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\AddLoans.resx">
       <DependentUpon>AddLoans.cs</DependentUpon>
