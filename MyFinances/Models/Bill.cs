@@ -41,8 +41,11 @@ namespace MyFinances.Models
         [NotMapped]
         public List<BillPayment> NotOwnerBillPayments { get; set; }
 
-        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedAmount { get; set; }
+        [NotMapped, Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal YouPay { get; set; }
+
+        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal OwnerPays { get; set; }
 
         [NotMapped]
         public bool NotOwner { get; set; }
@@ -64,20 +67,11 @@ namespace MyFinances.Models
         [NotMapped, Display(Name = "Average"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal AveragePaid { get; set; }
 
-        [NotMapped, Display(Name = "Average Shared"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal AveragePaidShared { get; set; }
-
         [NotMapped, Display(Name = "Min Paid"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal MinPaid { get; set; }
 
-        [NotMapped, Display(Name = "Min Paid Shared"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal MinPaidShared { get; set; }
-
         [NotMapped, Display(Name = "Max Paid"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal MaxPaid { get; set; }
-
-        [NotMapped, Display(Name = "Max Paid Shared"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal MaxPaidShared { get; set; }
 
         [NotMapped, Display(Name = "Last Payment Date"), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime LastPaymentDate { get; set; }
@@ -107,7 +101,14 @@ namespace MyFinances.Models
         public static Bill Populate(this Bill bill, ApplicationUser user)
         {
             bill.NotOwner = bill.User.Id != user.Id;
-            bill.SharedAmount = bill.Amount / (bill.SharedWith.Count() + 1);
+            bill.OwnerPays = bill.Amount - bill.SharedWith.Sum(x => x.Amount);
+            if (bill.NotOwner)
+            {
+                bill.YouPay = bill.SharedWith.Where(x => x.SharedWithUser.Id == user.Id).FirstOrDefault().Amount;
+            } else
+            {
+                bill.YouPay = bill.OwnerPays;
+            }
 
             if (bill.BillPayments != null && bill.BillPayments.Any())
             {
@@ -140,9 +141,6 @@ namespace MyFinances.Models
                 bill.MinPaid = bill.BillPayments.Min(x => x.Amount);
                 bill.MaxPaid = bill.BillPayments.Max(x => x.Amount);
                 bill.AveragePaid = bill.BillPayments.Average(x => x.Amount);
-                bill.MinPaidShared = bill.MinPaid / (bill.SharedWith.Count() + 1);
-                bill.MaxPaidShared = bill.MaxPaid / (bill.SharedWith.Count() + 1);
-                bill.AveragePaidShared = bill.AveragePaid / (bill.SharedWith.Count() + 1);
             }
 
             double dueInDays = (bill.DueDate - new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day)).TotalDays;
@@ -170,10 +168,18 @@ namespace MyFinances.Models
                     date = newDateAmount.Item1;
                     if (newDateAmount.Item1 >= range.StartDate && date <= range.EndDate)
                     {
-                        DashboardItem item = new DashboardItem(bill);
-                        item.Date = date;
-                        item.Amount = newDateAmount.Item2;
-                        item.SharedAmount = item.Amount / (bill.SharedWith.Count() + 1);
+                        DashboardItem item = new DashboardItem(bill)
+                        {
+                            Date = date,
+                            Amount = newDateAmount.Item2
+                        };
+                        if (bill.NotOwner)
+                        {
+                            item.YouPay = bill.SharedWith.Where(x => x.SharedWithUser.Id == user.Id).FirstOrDefault().Amount;
+                        } else
+                        {
+                            item.YouPay = item.Amount - bill.SharedWith.Sum(x => x.Amount);
+                        }
                         items.Add(item);
                     }
                 }
@@ -310,13 +316,17 @@ namespace MyFinances.Models
             Bill = new Bill();
         }
 
-        public SharedBill (Bill bill, ApplicationUser user)
+        public SharedBill (Bill bill, ApplicationUser user, SharedPercentage percentage)
         {
             Bill = bill;
             SharedWithUser = user;
+            SharedPercentage = percentage;
         }
 
         public virtual Bill Bill { get; set; }
+
+        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal Amount { get { return Bill.Amount * ((int)SharedPercentage / 100M); } }
     }
 
     public class BillAverage
@@ -386,28 +396,29 @@ namespace MyFinances.Models
 
         public virtual ICollection<SharedBillPayment> SharedWith { get; set; }
 
-        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedAmount { get
-            {
-                return Amount / (SharedWith.Count() + 1);
-            }
+        [NotMapped, Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal YouPay { get { return Amount - SharedWith.Sum(x => x.Amount); }
         }
     }
 
     public class SharedBillPayment : BaseShare
     {
-        public SharedBillPayment ()
+        public SharedBillPayment()
         {
             BillPayment = new BillPayment();
         }
 
-        public SharedBillPayment (BillPayment billPayment, ApplicationUser user)
+        public SharedBillPayment(BillPayment billPayment, ApplicationUser user, SharedPercentage percentage)
         {
             BillPayment = billPayment;
             SharedWithUser = user;
+            SharedPercentage = percentage;
         }
 
         public virtual BillPayment BillPayment { get; set; }
+
+        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal Amount { get { return BillPayment.Amount * ((int)SharedPercentage / 100M); } }
     }
 }
  

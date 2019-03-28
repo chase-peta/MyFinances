@@ -3,16 +3,8 @@
     return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
 };
 
-function calc() {
-    var pri = intVal($fAdd.val()) + intVal($fBase.val()),
-        payment = pri + intVal($fEscrow.val()) + intVal($fInterest.val()),
-        principal = currentPrincipal - pri;
-    $rPayment.text('$' + payment.format(2));
-    $rPrincipal.text('$' + principal.format(2));
-}
-
 $(function () {
-    var year, date,
+    var date,
         months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     var intVal = function (num) {
@@ -22,25 +14,37 @@ $(function () {
             num : 0;
     };
 
+    function calc() {
+        var pri = intVal($fAdd.val()) + intVal($fBase.val()),
+            payment = pri + intVal($fEscrow.val()) + intVal($fInterest.val()),
+            principal = currentPrincipal - pri;
+        $rPayment.text('$' + payment.format(2));
+        $rPrincipal.text('$' + principal.format(2));
+    }
+
+    var selectedYear = 0;
+
     if ($("#loanPaymentId").length) {
         var lpId = $("#loanPaymentId").val(),
             rlpStr = "#LoanPayment-" + lpId,
-            currentPrincipal = intVal($(rlpStr).attr("data-current-principal")),
 
             $fDatePaid = $("#DatePaid"),
+            $fBase = $("#Base"),
+            $fAdd = $("#Additional"),
             $fInterest = $("#Interest"),
             $fEscrow = $("#Escrow"),
-            $fBase = $("#BasicPayment"),
-            $fAdd = $("#AddPayment"),
 
-            $rInterest = $(rlpStr + " .interest"),
-            $rEscrow = $(rlpStr + " .escrow"),
             $rBase = $(rlpStr + " .base"),
-            $rAdd = $(rlpStr + " .add"),
+            $rInterest = $(rlpStr + " .interest"),
+            $rAdd = $(rlpStr + " .additional"),
+            $rEscrow = $(rlpStr + " .escrow"),
             $rPayment = $(rlpStr + " .payment"),
-            $rPrincipal = $(rlpStr + " .principal");
+            $rPrincipal = $(rlpStr + " .principal"),
 
-        year = $(rlpStr + " th").attr("data-search");
+            currentPrincipal = intVal($rPrincipal.text()) - intVal($fBase.val()) - intVal($fAdd.val());
+
+        selectedYear = $(rlpStr).attr("data-year");
+
         $(rlpStr).removeClass("alert-danger").removeClass("alert-success").removeClass("alert-warning").addClass("alert-info");
 
         $fInterest.keyup(function () { $rInterest.text('$' + intVal($(this).val()).format(2)); calc(); })
@@ -57,35 +61,54 @@ $(function () {
     }
     else if ($("#billPaymentId").length) {
         var bpId = $("#billPaymentId").val(),
-           rbpStr = "#BillPayment-" + bpId,
+            rbpStr = "#BillPayment-" + bpId,
 
-           $fPayee = $("#Payee"),
-           $fAmount = $("#Amount"),
+            $fPayee = $("#Payee"),
+            $fAmount = $("#Amount"),
 
-           $rPayee = $(rbpStr + " .payee"),
-           $rAmount = $(rbpStr + " .amount");
+            $rPayee = $(rbpStr + " .payee"),
+            $rAmount = $(rbpStr + " .amount");
 
-        year = $(rbpStr + " th").attr("data-search");
+        selectedYear = $(rbpStr).attr("data-year");
         $(rbpStr).removeClass("alert-danger").removeClass("alert-success").removeClass("alert-warning").addClass("alert-info");
 
         $fPayee.keyup(function () { $rPayee.text($(this).val()); })
-           .focus(function () { $(this).select(); });
+            .focus(function () { $(this).select(); });
 
         $fAmount.keyup(function () { $rAmount.text('$' + intVal($(this).val()).format(2)); })
             .focus(function () { $(this).select(); });
+    }
+    else if ($("#incomePaymentId").length) {
+        var ipId = $("#incomePaymentId").val(),
+            ripStr = "#IncomePayment-" + ipId,
+
+            $fAmount = $("#Amount"),
+
+            $rAmount = $(ripStr + " .amount");
+
+        selectedYear = $(ripStr).attr("data-year");
+        console.log(selectedYear);
+        $(ripStr).removeClass("alert-danger").removeClass("alert-success").removeClass("alert-warning").addClass("alert-info");
+
+        $fAmount.keyup(function () { $rAmount.Text('$' + intVal($(this).val()).format(2)); })
+            .focus(function () { $(this).selct(); });
     }
 
     $(".tab-pane .pagination a").click(function (e) {
         e.preventDefault();
         $(this).closest(".pagination").find("li").removeClass("active");
         $(this).parent("li").addClass("active");
-        var selectedYear = $(this).attr("data-year");
+        selectedYear = $(this).attr("data-year");
         $(this).closest(".tab-pane").find("table tbody tr").removeClass("hide");
         if (selectedYear !== '') {
             $(this).closest(".tab-pane").find("table tbody tr:not([data-year='" + selectedYear + "'])").addClass("hide");
         }
-    })
-    $(".tab-pane .pagination li:first-child a").click();
+    });
+    if (selectedYear == 0) {
+        $(".tab-pane .pagination li:first-child a").click();
+    } else {
+        $(".tab-pane .pagination li a[data-year='"+selectedYear+"']").click();
+    }
 
     var $paymentFrequency = $("#PaymentFrequency"),
         $datePaidCheckbox = $("#IsDueDateStaysSame"),
@@ -113,8 +136,6 @@ $(function () {
         } else {
             $(".selectPayees").slideUp(400);
         }
-        console.log(this.checked);
-        console.log('here');
     });
 
     $("[data-toggle=\"tooltip\"]").tooltip();
@@ -173,4 +194,16 @@ $(function () {
             }
         }
     }
+
+    $('input[type="checkbox"][name="payeeId"]').on("change", function () {
+        var value = $(this).val();
+        var parent = $(this).parent(".form-check");
+        if (this.checked) {
+            $("div#" + value + "-dropdown").slideDown(400);
+            parent.addClass("with-dropdown");
+        } else {
+            $("div#" + value + "-dropdown").slideUp(400);
+            parent.removeClass("with-dropdown");
+        }
+    });
 });

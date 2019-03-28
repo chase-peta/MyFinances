@@ -1,0 +1,111 @@
+﻿@model MyFinances.Models.IncomeUserPayment
+
+@{
+    string name = Model.IncomeUser.PayeeUser.FirstName + " " + Model.IncomeUser.PayeeUser.LastName;
+    ViewBag.Title = ViewBag.Action + " - " + name + " Income User";
+}
+
+<div class="clear-after">
+    <div class="pull-right">
+        @Html.ActionLink("Back to Income", "Details", new { id = Model.IncomeUser.ID }, new { @class = "btn btn-danger" })
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+@section Form {
+    @Html.HiddenFor(model => model.ID)
+    <input type="hidden" name="incomePaymentUserId" id="incomePaymentId" value="@Model.ID" />
+    @Html.HiddenFor(model => model.IncomeUser.ID)
+
+    <div class="update-form alert-info">
+
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Date, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Date, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Date)
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.SharedTotal, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.SharedTotal, new { htmlAttributes = new { @class = "form-control", disabled = "disabled", @readonly = "readonly" } })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Amount, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Amount)
+        </div>
+    </div>
+}
+
+@section BelowForm {
+    <input type="submit" value="Save" class="btn btn-primary pull-right" />
+
+    @if (ViewBag.Action == "Edit Payment")
+    {
+        @Html.ActionLink("Delete Payment", "DeletePayment", new { id = Model.ID }, new
+        {
+            @class = "btn btn-danger confirmation",
+            data_confirm_title = "Delete this payment for " + name + " Income User",
+            data_confirm_message = "Are you sure you want to delete this payment for " + name + " Income User?",
+            data_confirm_style = "danger",
+            data_toggle = "tooltip",
+            data_placement = "right",
+            title = "This will delete this 1 payment."
+        })
+    }
+}
+
+@section Section2 {
+    @Html.Partial("_IncomeUserInfo", Model.IncomeUser)
+
+    @{
+        bool bills = Model.BillPayments != null && Model.BillPayments.Any();
+        bool loans = Model.LoanPayments != null && Model.LoanPayments.Any();
+    }
+
+    @if (bills || loans)
+    {
+        <div class="tab-content margin-bottom-20">
+            <div class="table-container">
+                <table class="table table-striped">
+                    <tbody>
+                        @if (bills)
+                        {
+                            <tr>
+                                <th colspan="3">Shared Bills</th>
+                            </tr>
+                            foreach (MyFinances.Models.SharedBillPayment billPayment in Model.BillPayments)
+                            {
+                                <tr>
+                                    <th>@Html.ActionLink(Html.DisplayFor(x => billPayment.BillPayment.Bill.Name).ToString(), "Details", "Bills", new { ID = billPayment.BillPayment.Bill.ID }, null)</th>
+                                    <td>@Html.DisplayFor(x => billPayment.SharedPercentage)</td>
+                                    <td class="text-right">@Html.DisplayFor(x => billPayment.Amount)</td>
+                                </tr>
+                            }
+                        }
+                        @if (loans)
+                        {
+                            <tr>
+                                <th colspan="3">Shared Loans</th>
+                            </tr>
+                            foreach (MyFinances.Models.SharedLoanPayment loanPayment in Model.LoanPayments)
+                            {
+                                <tr>
+                                    <th>@Html.ActionLink(Html.DisplayFor(x => loanPayment.LoanPayment.Loan.Name).ToString(), "Details", "Loans", new { ID = loanPayment.LoanPayment.Loan.ID }, null)</th>
+                                    <td>@Html.DisplayFor(x => loanPayment.SharedPercentage)</td>
+                                    <td class="text-right">@Html.DisplayFor(x => loanPayment.Amount)</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+
+@section Section3 {
+    @Html.Partial("_PaymentAverage", Model.IncomeUser)
+}

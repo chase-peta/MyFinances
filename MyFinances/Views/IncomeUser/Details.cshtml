@@ -1,0 +1,218 @@
+﻿@model MyFinances.Models.IncomeUser
+
+@{
+    string Name = (Model.PayeeUser != null ? Model.PayeeUser.FirstName + " " + Model.PayeeUser.LastName : "");
+    ViewBag.Title = ((ViewBag.Action != "Create") ? Name : ViewBag.Action) + " User Income";
+}
+
+<div class="clear-after">
+    <div class="pull-right">
+        @if (ViewBag.Action == "Edit")
+        {
+            @Html.ActionLink("Back to Income", "Details", new { ID = Model.ID }, new { @class = "btn btn-danger" })
+        }
+        else
+        {
+            @Html.ActionLink("Back to all Incomes", "Index", "Income", null, new { @class = "btn btn-primary" })
+        }
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+@if (ViewBag.Action != "Details")
+{
+    @section Form {
+        <div class="update-form standard">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true)
+
+            <div class="row">
+                <div class="col-xs-12 col-lg-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.PaymentFrequency, new { @class = "control-label" })
+                        @Html.EnumDropDownListFor(model => model.PaymentFrequency, "Select Payment Frequency", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.PaymentFrequency)
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-lg-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Date, new { @class = "control-label" })
+                        @Html.EditorFor(model => model.Date, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Date)
+                    </div>
+                </div>
+            </div>
+
+            @if (ViewBag.Action == "Create")
+            {
+                <h3>Choose User</h3>
+                <div class="row">
+                    @if ((ViewBag.Users as List<MyFinances.Models.ApplicationUser>).Any())
+                    {
+                        foreach (MyFinances.Models.ApplicationUser user in ViewBag.Users)
+                        {
+                            <div class="col-xs-6">
+                                <div class="form-check">
+                                    <input type="radio" name="userId" value="@user.Id" class="form-check-input" id="@user.Id" />
+                                    <label for="@user.Id" class="form-check-label">@user.FirstName  @user.LastName</label>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    if (ViewBag.Action == "Edit")
+    {
+        if ((ViewBag.Bills as List<MyFinances.Models.Bill>).Any())
+        {
+            @section Bills {
+                <div class="update-form standard">
+                    <div class="selectBills">
+                        @foreach (MyFinances.Models.Bill bill in ViewBag.Bills)
+                        {
+                            var shared = bill.SharedWith.ToList().Find(x => x.SharedWithUser.Id == Model.PayeeUser.Id);
+                            bool billCheck = shared != null;
+                            var percent = (billCheck ? shared.SharedPercentage : MyFinances.Models.SharedPercentage.Half);
+                            <div class="row">
+                                <div class="col-xs-8">
+                                    <div class="form-check @(billCheck ? "with-dropdown" : "")">
+                                        <input type="checkbox" name="billId" value="@bill.ID" class="form-check-input" id="bill-@bill.ID" checked="@billCheck" />
+                                        <label for="bill-@bill.ID" class="form-check-label">@bill.Name</label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-4">
+                                    <div class="form-group" style="@(billCheck ? "" : "display: none;")" id="bill-@bill.ID-dropdown">
+                                        <select name="sharedPercentBill" class="form-control" id="shared-percent-bill-@bill.ID">
+                                            @foreach (var item in ViewBag.SharedPercentage)
+                                            {
+                                                <option value="@bill.ID|@item" @(item.ToString() == percent.ToString() ? "selected" : "")>@item</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+        if ((ViewBag.Loans as List<MyFinances.Models.Loan>).Any())
+        {
+            @section Loans {
+                <div class="update-form standard">
+                    <div class="selectLoans">
+                        @foreach (MyFinances.Models.Loan loan in ViewBag.Loans)
+                        {
+                            var shared = loan.SharedWith.ToList().Find(x => x.SharedWithUser.Id == Model.PayeeUser.Id);
+                            bool loanCheck = shared != null;
+                            var percent = (loanCheck ? shared.SharedPercentage : MyFinances.Models.SharedPercentage.Half);
+                            <div class="row">
+                                <div class="col-xs-8">
+                                    <div class="form-check @(loanCheck ? "with-dropdown" : "")">
+                                        <input type="checkbox" name="loanId" value="@loan.ID" class="form-check-input" id="loan-@loan.ID" checked="@loanCheck" />
+                                        <label for="bill-@loan.ID" class="form-check-label">@loan.Name</label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-4">
+                                    <div class="form-group" style="@(loanCheck ? "" : "display: none;")" id="loan-@loan.ID-dropdown">
+                                        <select name="sharedPercentLoan" class="form-control" id="shared-percent-loan-@loan.ID">
+                                            @foreach (var item in ViewBag.SharedPercentage)
+                                            {
+                                                <option value="@loan.ID|@item" @(item.ToString() == percent.ToString() ? "selected" : "")>@item</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    @section BelowForm {
+        <input type="submit" value="Save" class="btn btn-primary pull-right" />
+
+        @if (ViewBag.Action == "Edit")
+        {
+            @Html.ActionLink("Deactivate", "Deactivate", new { id = Model.ID }, new
+            {
+                @class = "btn btn-danger confirmation",
+                data_confirm_title = "Deactivate " + Name + " Income User",
+                data_confirm_message = "Are you sure you want to deactivate deactivate " + Name + " Income User?",
+                data_confirm_style = "danger",
+                data_toggle = "tooltip",
+                data_placement = "right",
+                title = "Will set to NOT active - Payments will NOT be deleted"
+            })
+        }
+    }
+}
+else
+{
+    @section Section1 {
+        <div class="tab-content margin-bottom-20">
+            <div class="table-container">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th>@Html.DisplayNameFor(model => model.Date)</th>
+                            <td>@Html.DisplayFor(model => model.Date)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @section BelowForm {
+        @if (ViewBag.Action != "Create")
+        {
+            <div class="text-right margin-bottom-20">
+                @if (Model.IsActive)
+                {
+                    @Html.ActionLink("Add Payment", "AddPayment", new { ID = Model.ID }, new { @class = "btn btn-success" })
+                    @Html.ActionLink("Edit Income", "Edit", new { ID = Model.ID }, new { @class = "btn btn-primary" })
+                }
+                else
+                {
+                    @Html.ActionLink("Delete", "Delete", new { ID = Model.ID }, new
+                    {
+                        @class = "btn btn-danger confirmation pull-left",
+                        data_confirm_title = "Permanently Delete " + Name + " Income",
+                        data_confirm_message = "Are you sure you want to permanently delete " + Name + " Income User?<br><strong>All payments will be deleted with deletion.</strong>",
+                        data_confirm_style = "danger",
+                        data_toggle = "tooltip",
+                        data_placement = "right",
+                        title = "Will delete - Payments WILL BE DELETED"
+                    })
+
+                    @Html.ActionLink("Activate", "Activate", new { ID = Model.ID }, new
+                    {
+                        @class = "btn btn-success confirmation",
+                        data_confirm_title = "Activate " + Name + " Income",
+                        data_confirm_message = "Are you sure you want to activate " + Name + " Income?",
+                        data_confirm_style = "success",
+                        data_toggle = "tooltip",
+                        data_placement = "left",
+                        title = "Set Active"
+                    })
+                }
+            </div>
+        }
+    }
+}
+
+@section Section2 {
+    @Html.Partial("_IncomeUserInfo")
+}
+
+@section Section3 {
+    @Html.Partial("_PaymentAverage")
+}

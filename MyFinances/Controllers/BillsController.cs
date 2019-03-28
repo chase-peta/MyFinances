@@ -37,23 +37,25 @@ namespace Finances.Controllers
         {
             ViewBag.Action = "Create";
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", new Bill());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create (string[] payeeId, [Bind(Include = "Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill bill)
+        public ActionResult Create (string[] payeeId, string[] sharedPercent, [Bind(Include = "Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill bill)
         {
             ViewBag.Action = "Create";
             if (ModelState.IsValid)
             {
                 bill.User = db.Users.Find(user.Id);
                 db.Bills.Add(bill);
-                UpdateBillShared(bill, payeeId);
+                UpdateBillShared(bill, payeeId, sharedPercent);
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", bill);
         }
 
@@ -66,12 +68,13 @@ namespace Finances.Controllers
                 return HttpNotFound();
             }
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", bill);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit (string[] payeeId, [Bind(Include = "ID,Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill subBill)
+        public ActionResult Edit (string[] payeeId, string[] sharedPercent, [Bind(Include = "ID,Name,DueDate,Amount,Payee,IsDueDateStaysSame,IsAmountStaysSame,IsShared,PaymentFrequency")] Bill subBill)
         {
             ViewBag.Action = "Edit";
             Bill bill = db.Bills.Find(subBill.ID);
@@ -83,11 +86,12 @@ namespace Finances.Controllers
             if (ModelState.IsValid)
             {
                 db.Entry(bill).State = EntityState.Modified;
-                UpdateBillShared(bill, payeeId);
+                UpdateBillShared(bill, payeeId, sharedPercent);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = bill.ID });
             }
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", bill);
         }
 
@@ -135,7 +139,7 @@ namespace Finances.Controllers
             return RedirectToAction("Index");
         }
 
-        public ActionResult AddPayment (int? id)
+        public ActionResult AddPayment(int? id)
         {
             ViewBag.Action = "Add Payment";
             Bill bill = GetBill(id);
@@ -144,19 +148,23 @@ namespace Finances.Controllers
                 return HttpNotFound();
             }
 
-            BillPayment payment = new BillPayment();
-            payment.Amount = bill.Amount;
-            payment.DatePaid = bill.DueDate;
-            payment.Payee = bill.Payee;
-            payment.Bill = bill;
+            BillPayment payment = new BillPayment
+            {
+                Amount = bill.Amount,
+                DatePaid = bill.DueDate,
+                Payee = bill.Payee,
+                Bill = bill
+            };
+            
             
             ViewBag.Users = GetAvailableUsers(payment.Bill);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", payment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddPayment (int? id, string[] payeeId, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
+        public ActionResult AddPayment (int? id, string[] payeeId, string[] sharedPercent, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
         {
             ViewBag.Action = "Add Payment";
             billPayment.Bill = GetBill(id);
@@ -168,12 +176,13 @@ namespace Finances.Controllers
             {
                 billPayment.User = db.Users.Find(user.Id);
                 db.BillPayments.Add(billPayment);
-                db.Entry(saveBillForNextPayment(billPayment)).State = EntityState.Modified;
-                UpdateBillPaymentShared(billPayment, payeeId);
+                db.Entry(SaveBillForNextPayment(billPayment)).State = EntityState.Modified;
+                UpdateBillPaymentShared(billPayment, payeeId, sharedPercent);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = billPayment.Bill.ID });
             }
             ViewBag.Users = GetAvailableUsers(billPayment.Bill);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", billPayment);
         }
 
@@ -186,12 +195,13 @@ namespace Finances.Controllers
                 return HttpNotFound();
             }
             ViewBag.Users = GetAvailableUsers(billPayment.Bill);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", billPayment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditPayment (int id, string[] payeeId, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
+        public ActionResult EditPayment (int id, string[] payeeId, string[] sharedPercent, [Bind(Include = "Amount,DatePaid,Payee")] BillPayment billPayment)
         {
             ViewBag.Action = "Edit Payment";
             BillPayment bp = GetBillPayment(id);
@@ -207,10 +217,12 @@ namespace Finances.Controllers
                 
                 db.Entry(bp).State = EntityState.Modified;
                 db.SaveChanges();
-                UpdateBillPaymentShared(bp, payeeId);
+                UpdateBillPaymentShared(bp, payeeId, sharedPercent);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = bp.Bill.ID });
             }
+            ViewBag.Users = GetAvailableUsers(billPayment.Bill);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", billPayment);
         }
 
@@ -240,20 +252,21 @@ namespace Finances.Controllers
             {
                 return HttpNotFound();
             }
-            BillPayment billPayment = new BillPayment();
-            billPayment.Bill = bill;
-
-            billPayment.Amount = bill.Amount;
-            billPayment.DatePaid = bill.DueDate;
-            billPayment.Payee = bill.Payee;
-            billPayment.User = db.Users.Find(user.Id);
-
+            BillPayment billPayment = new BillPayment
+            {
+                Bill = bill,
+                Amount = bill.Amount,
+                DatePaid = bill.DueDate,
+                Payee = bill.Payee,
+                User = db.Users.Find(user.Id)
+            };
+            
             db.BillPayments.Add(billPayment);
             if (billPayment.Bill.IsShared && billPayment.Bill.SharedWith.Count() > 0)
             {
-                GetAvailableUsers(bill).ForEach(x => db.SharedBillPayment.Add(new SharedBillPayment(billPayment, x)));
+                GetAvailableUsers(bill).ForEach(x => db.SharedBillPayment.Add(new SharedBillPayment(billPayment, x, bill.SharedWith.Where(y => y.SharedWithUser.Id == x.Id).FirstOrDefault().SharedPercentage)));
             }
-            db.Entry(saveBillForNextPayment(billPayment)).State = EntityState.Modified;
+            db.Entry(SaveBillForNextPayment(billPayment)).State = EntityState.Modified;
             db.SaveChanges();
             if (r == "Dashboard")
             {
@@ -265,7 +278,7 @@ namespace Finances.Controllers
             }
         }
 
-        private Bill saveBillForNextPayment(BillPayment billPayment)
+        private Bill SaveBillForNextPayment(BillPayment billPayment)
         {
             Bill bill = billPayment.Bill;
 

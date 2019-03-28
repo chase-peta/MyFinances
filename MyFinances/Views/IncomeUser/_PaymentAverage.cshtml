@@ -1,0 +1,146 @@
+﻿@model MyFinances.Models.IncomeUser
+
+@if (ViewBag.Action != "Create")
+{
+    <div id="IncomeUserTabs">
+        <ul class="nav nav-tabs" role="tablist">
+            @if (Model.NotPaidIncomeUserPayments != null && Model.NotPaidIncomeUserPayments.Any())
+            {
+                <li role="presentation"><a href="#incomeNotPaidPaymentHistory" aria-controls="incomeNotPaidPaymentHistory" role="tab" data-toggle="tab" class="btn-md">Not Paid</a></li>
+            }
+            <li role="presentation" class="active"><a href="#incomePaymentHistory" aria-controls="incomePaymentHistory" role="tab" data-toggle="tab" class="btn-md">Payment History</a></li>
+            @if (Model.IncomeUserPayments != null && Model.IncomeUserPayments.Any())
+            {
+                <li role="presentation"><a href="#incomeMonthlyAverages" aria-controls="incomelMonthlyAverages" role="tab" data-toggle="tab" class="btn-md">Monthly Averages</a></li>
+            }
+        </ul>
+
+        <div class="tab-content">
+            @if (Model.NotPaidIncomeUserPayments != null && Model.NotPaidIncomeUserPayments.Any())
+            {
+                <div role="tabpanel" class="tab-pane fade" id="incomeNotPaidPaymentHistory">
+                    <div class="text-center">
+                        <ul class="pagination">
+                            @for (int i = Model.NotPaidMaxYear; i >= Model.NotPaidMinYear; i--)
+                            {
+                                <li><a href="#" data-year="@i">@i</a></li>
+                            }
+                            <li><a href="#" data-year="">Show All</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(x => x.NotPaidIncomeUserPayments.FirstOrDefault().Date)</th>
+                                    <th class="text-right">@Html.DisplayNameFor(x => x.NotPaidIncomeUserPayments.FirstOrDefault().Amount)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.NotPaidIncomeUserPayments.OrderBy(x => x.Date).ToList())
+                                {
+                                    <tr class="hide" data-year="@item.Date.Year">
+                                        <th>@item.Date.ToString("MMMM - dd")</th>
+                                        <td class="text-right"><span class="amount">@Html.DisplayFor(m => item.Amount)</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <div role="tabpanel" class="tab-pane fade in active" id="incomePaymentHistory">
+
+                @if (Model.IncomeUserPayments != null && Model.IncomeUserPayments.Any())
+                {
+                    <div class="text-center">
+                        <ul class="pagination">
+                            @for (int i = Model.MaxYear; i >= Model.MinYear; i--)
+                            {
+                                <li><a href="#" data-year="@i">@i</a></li>
+                            }
+                            <li><a href="#" data-year="">Show All</a></li>
+                        </ul>
+                    </div>
+                }
+
+                <div class="table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>@Html.DisplayNameFor(model => model.IncomeUserPayments.FirstOrDefault().Date)</th>
+                                <th class="text-right">@Html.DisplayNameFor(model => model.IncomeUserPayments.FirstOrDefault().SharedTotal)</th>
+                                <th class="text-right">@Html.DisplayNameFor(model => model.IncomeUserPayments.FirstOrDefault().Amount)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.IncomeUserPayments != null &&  Model.IncomeUserPayments.Any())
+                            {
+                                foreach (var item in Model.IncomeUserPayments.OrderBy(x => x.Date).ToList())
+                                {
+                                    <tr class="@(Model.IsActive && Model.LastPaymentDate == item.Date ? "alert-success with-border" : "") hide" id="IncomePayment-@item.ID" data-year="@item.Date.Year">
+                                        <th>@Html.ActionLink(item.Date.ToString("MMMM - dd"), "EditPayment", new { ID = item.ID }, new { @class = "datePaid" })</th>
+                                        <td class="text-right">@Html.DisplayFor(m => item.SharedTotal)</td>
+                                        <td class="text-right"><span class="amount">@Html.DisplayFor(m => item.Amount)</span></td>
+                                    </tr>
+                                }
+                            }
+                            @if (Model.IsActive && Model.NotPaidIncomeUserPayments != null && Model.NotPaidIncomeUserPayments.Any())
+                            {
+                                MyFinances.Models.NotPaidIncomeUserPayemnt payment = Model.NotPaidIncomeUserPayments.FirstOrDefault();
+                                <tr class="next-payment alert-warning hide" id="IncomePayment-0" data-year="@payment.Date.Year">
+                                    <th>@Html.ActionLink(payment.Date.ToString("MMMM - dd"), "AddPayment", new { id = Model.ID }, new { @class = "datePaid" })</th>
+                                    <td class="text-right">@Html.DisplayFor(m => payment.Amount)</td>
+                                    <td class="text-right"><span class="amount">@Html.DisplayFor(m => payment.Amount)</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if (Model.IncomeUserPayments != null && Model.IncomeUserPayments.Any())
+            {
+                <div role="tabpanel" class="tab-pane fade" id="incomeMonthlyAverages">
+                    <div class="table-container">
+                        @*<table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="hidden"></th>
+                                <th>@Html.DisplayNameFor(model => model.BillAverages.FirstOrDefault().Date)</th>
+                                <th class="text-right">@Html.DisplayNameFor(model => model.BillAverages.FirstOrDefault().Min)</th>
+                                <th class="text-right">@Html.DisplayNameFor(model => model.BillAverages.FirstOrDefault().Max)</th>
+                                <th class="text-right">@Html.DisplayNameFor(model => model.BillAverages.FirstOrDefault().Average)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.BillAverages.OrderBy(x => x.Date))
+                            {
+                                if (item.IsActive)
+                                {
+                                    <tr>
+                                        <th>@Html.DisplayFor(m => item.Date)</th>
+                                        <td class="text-right">@Html.DisplayFor(m => item.Min) / @Html.DisplayFor(m => item.MinShared)</td>
+                                        <td class="text-right">@Html.DisplayFor(m => item.Max) / @Html.DisplayFor(m => item.MaxShared)</td>
+                                        <td class="text-right">@Html.DisplayFor(m => item.Average) / @Html.DisplayFor(m => item.AverageShared)</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th></th>
+                                <th class="text-right">@Html.DisplayFor(model => model.MinPaid) / @Html.DisplayFor(model => model.MinPaidShared)</th>
+                                <th class="text-right">@Html.DisplayFor(model => model.MaxPaid) / @Html.DisplayFor(model => model.MaxPaidShared)</th>
+                                <th class="text-right">@Html.DisplayFor(model => model.AveragePaid) / @Html.DisplayFor(model=> model.AveragePaidShared)</th>
+                            </tr>
+                        </tfoot>
+                    </table>*@
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

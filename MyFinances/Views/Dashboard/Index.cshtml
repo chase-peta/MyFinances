@@ -14,132 +14,148 @@
 </script>
 
 <div class="row">
-    @{ int count = 0; }
-    @foreach (MyFinances.Models.DashboardDateRange range in Model.DateRanges)
+    @if (Model.DateRanges != null && Model.DateRanges.Any())
     {
-        count += 1;
-        <div class="col-lg-6">
+        int count = 0;
+        foreach (MyFinances.Models.DashboardDateRange range in Model.DateRanges)
+        {
+            { count += 1; }
+            <div class="col-lg-6">
 
-            <div class="panel with-nav-tabs panel-primary">
-                <div class="panel-heading clearfix">
-                    <h3 class="pull-left">@Html.DisplayFor(x => range.StartDate) - @Html.DisplayFor(m => range.EndDate), @range.EndDate.Year</h3>
+                <div class="panel with-nav-tabs panel-primary">
+                    <div class="panel-heading clearfix">
+                        <h3 class="pull-left">@Html.DisplayFor(x => range.StartDate) - @Html.DisplayFor(m => range.EndDate), @range.EndDate.Year</h3>
 
-                    <ul class="nav nav-tabs pull-right">
-                        <li><a href="#graghTab-@count" data-toggle="tab" data-chart-number="@count">Graph</a></li>
-                        <li class="active"><a href="#tableTab-@count" data-toggle="tab">Table</a></li>
-                    </ul>
-                </div>
-
-                <div class="tab-content">
-
-                    <div class="tab-pane fade in active" id="tableTab-@count">
-                        <div class="table-container">
-                            <table class="table table-striped" id="Dashboard-Table-Income-@count">
-                                <thead>
-                                    <tr>
-                                        <th>@Html.DisplayFor(m => range.IncomeItems.First().Name)</th>
-                                        <th>@Html.DisplayNameFor(m => range.IncomeItems.First().Date)</th>
-                                        <th>&nbsp;</th>
-                                        <th>&nbsp;</th>
-                                        <th>&nbsp;</th>
-                                        <th class="text-right">@Html.DisplayNameFor(m => range.IncomeItems.First().Amount)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (MyFinances.Models.DashboardIncomeItem item in range.IncomeItems)
-                                    {
-                                        <tr>
-                                            <th>@Html.DisplayFor(m => item.Name)</th>
-                                            <td>@Html.DisplayFor(m => item.Date)</td>
-                                            <td>&nbsp;</td>
-                                            <td>&nbsp;</td>
-                                            <td>&nbsp;</td>
-                                            <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th class="text-right" colspan="5">@Html.DisplayNameFor(m => range.IncomeTotal):</th>
-                                        <th class="text-right">@Html.DisplayFor(m => range.IncomeTotal)</th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        <div class="table-container">
-                            <table class="table table-striped" id="Dashboard-Table-@count">
-                                <thead>
-                                    <tr>
-                                        <th>Expenses</th>
-                                        <th>@Html.DisplayNameFor(m => range.Items.First().Date)</th>
-                                        <th>@Html.DisplayNameFor(m => range.Items.First().DueInDays)</th>
-                                        <th></th>
-                                        <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().SharedAmount)</th>
-                                        <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().Amount)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (MyFinances.Models.DashboardItem item in range.Items)
-                                    {
-                                        <tr class="@item.Classes">
-                                            <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", item.Type + "s", new { id = item.Id }, null)</th>
-                                            <td>@Html.DisplayFor(m => item.Date)</td>
-                                            <td>@Html.DisplayFor(m => item.DueIn)</td>
-                                            <td>
-                                                @if (!item.NotOwner && !item.IsPaid)
-                                                {
-                                                if (item.Type == "Bill")
-                                                {
-                                                    @Html.ActionLink("Paid", "Paid", item.Type + "s", new { id = item.Id, r = "Dashboard" }, new { @arial_label = "Paid " + item.Name + " " + item.Type })
-                                                }
-                                                else if (item.Type == "Loan")
-                                                {
-                                                    @Html.ActionLink("Paid", "AddPayment", item.Type + "s", new { id = item.Id }, new { @arial_label = "Paid " + item.Name + " " + item.Type })
-                                                }
-                                            }
-                                            </td>
-                                            <td class="text-right">@Html.DisplayFor(m => item.SharedAmount)</td>
-                                            <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th class="alert-info not-owner">@Html.DisplayNameFor(x => range.NotOwnerTotal):</th>
-                                        <th class="alert-info not-owner"><span class="total">@Html.DisplayFor(x => range.NotOwnerTotal)</span></th>
-                                        <th></th>
-                                        <th class="text-right">@Html.DisplayNameFor(x => range.Total):</th>
-                                        <th class="text-right"><span class="total">@Html.DisplayFor(x => range.SharedTotal)</span></th>
-                                        <th class="text-right"> <span class="total">@Html.DisplayFor(x => range.Total)</span></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                        <ul class="nav nav-tabs pull-right">
+                            <li><a href="#graghTab-@count" data-toggle="tab" data-chart-number="@count">Graph</a></li>
+                            <li class="active"><a href="#tableTab-@count" data-toggle="tab">Table</a></li>
+                        </ul>
                     </div>
 
-                    <div class="tab-pane fade" id="graghTab-@count">
-                        <div id="chart-@count" style="height: 400px; width: 100%;"></div>
+                    <div class="tab-content">
+
+                        <div class="tab-pane fade in active" id="tableTab-@count">
+                            <div class="table-container">
+                                <table class="table table-striped" id="Dashboard-Table-@count">
+                                    <tbody>
+                                        @if (range.IncomeItems.Any())
+                                        {
+                                            <tr>
+                                                <th>@Html.DisplayNameFor(m => range.IncomeItems.First().Name)</th>
+                                                <th>@Html.DisplayNameFor(m => range.IncomeItems.First().Date)</th>
+                                                <th>@Html.DisplayNameFor(m => range.IncomeItems.First().DueIn)</th>
+                                                <th>&nbsp;</th>
+                                                <th>&nbsp;</th>
+                                                <th class="text-right">@Html.DisplayNameFor(m => range.IncomeItems.First().Amount)</th>
+                                            </tr>
+                                            foreach (MyFinances.Models.DashboardIncomeItem item in range.IncomeItems)
+                                            {
+                                                <tr class="@item.ItemClasses">
+                                                    <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", "Income", new { id = item.Id }, null)</th>
+                                                    <td>@Html.DisplayFor(m => item.Date)</td>
+                                                    <td>@Html.DisplayFor(m => item.DueIn)</td>
+                                                    <td>
+                                                        @if (item.Type == "Income")
+                                                        {
+                                                            @Html.ActionLink("Paid", "Paid", item.Type, new { id = item.Id, r = "Dashboard" }, new { @arial_label = "Paid " + item.Name + " " + item.Type })
+                                                        }
+                                                    </td>
+                                                    <td>&nbsp;</td>
+                                                    <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <th class="text-right" colspan="5">@Html.DisplayNameFor(m => range.IncomeTotal):</th>
+                                                <th class="text-right">@Html.DisplayFor(m => range.IncomeTotal)</th>
+                                            </tr>
+                                        }
+                                        @if (range.Items != null && range.Items.Any())
+                                        {
+                                            <tr>
+                                                <th>Expenses</th>
+                                                <th>@Html.DisplayNameFor(m => range.Items.First().Date)</th>
+                                                <th>@Html.DisplayNameFor(m => range.Items.First().DueInDays)</th>
+                                                <th></th>
+                                                <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().YouPay)</th>
+                                                <th class="text-right">@Html.DisplayNameFor(m => range.Items.First().Amount)</th>
+                                            </tr>
+                                            foreach (MyFinances.Models.DashboardItem item in range.Items)
+                                            {
+                                                <tr class="@item.Classes">
+                                                    <th>@Html.ActionLink(Html.DisplayFor(m => item.Name).ToString(), "Details", item.Type + "s", new { id = item.Id }, null)</th>
+                                                    <td>@Html.DisplayFor(m => item.Date)</td>
+                                                    <td>@Html.DisplayFor(m => item.DueIn)</td>
+                                                    <td>
+                                                        @if (!item.NotOwner && !item.IsPaid)
+                                                        {
+                                                            if (item.Type == "Bill")
+                                                            {
+                                                                @Html.ActionLink("Paid", "Paid", item.Type + "s", new { id = item.Id, r = "Dashboard" }, new { @arial_label = "Paid " + item.Name + " " + item.Type })
+                                                            }
+                                                            else if (item.Type == "Loan")
+                                                            {
+                                                                @Html.ActionLink("Paid", "AddPayment", item.Type + "s", new { id = item.Id }, new { @arial_label = "Paid " + item.Name + " " + item.Type })
+                                                            }
+                                                        }
+                                                    </td>
+                                                    <td class="text-right">@Html.DisplayFor(m => item.YouPay)</td>
+                                                    <td class="text-right">@Html.DisplayFor(m => item.Amount)</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <th class="alert-info not-owner">@Html.DisplayNameFor(x => range.NotOwnerTotal):</th>
+                                                <th class="alert-info not-owner"><span class="total">@Html.DisplayFor(x => range.NotOwnerTotal)</span></th>
+                                                <th></th>
+                                                <th class="text-right">@Html.DisplayNameFor(x => range.Total):</th>
+                                                <th class="text-right"><span class="total">@Html.DisplayFor(x => range.SharedTotal)</span></th>
+                                                <th class="text-right"> <span class="total">@Html.DisplayFor(x => range.Total)</span></th>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="graghTab-@count">
+                            <div id="chart-@count" style="height: 400px; width: 100%;"></div>
+                        </div>
+
                     </div>
 
                 </div>
 
             </div>
-
-        </div>
-        <script>
-            charts.push({
-                chartName: "chart-@count",
-                loadOnStart: false,
-                loaded: false,
-                data: [
-                    @foreach (MyFinances.Models.DashboardItem item in range.Items)
-                    {
-                        @:{ y: @item.SharedAmount, indexLabel: "@item.Name" },
-                    }
-                ]
-            });
-        </script>
-        if (count % 2 == 0) { <div class="clearfix"></div> }
+            <script>
+                charts.push({
+                    chartName: "chart-@count",
+                    loadOnStart: false,
+                    loaded: false,
+                    data: [
+                        @if (range.Items != null && range.Items.Any())
+                        {
+                            foreach (MyFinances.Models.DashboardItem item in range.Items)
+                            {
+                                @:{ y: @item.YouPay, indexLabel: "@item.Name" },
+                            }
+                        }
+                    ]
+                });
+            </script>
+            if (count % 2 == 0)
+            { <div class="clearfix"></div> }
+        }
     }
 </div>
+
+@if (ViewBag.ShowViewMore)
+{
+    <div class="text-center">
+        @Html.ActionLink("View More", "More", null, new { @class = "btn btn-primary" })
+    </div>
+}
+@if (!ViewBag.ShowViewMore)
+{
+    <div class="text-center">
+        @Html.ActionLink("View Less", "Index", null, new { @class = "btn btn-primary" })
+    </div>
+}

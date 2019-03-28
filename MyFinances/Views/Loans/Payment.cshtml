@@ -9,90 +9,92 @@
     <h1>@ViewBag.Title</h1>
 </div>
 
-<div class="row">
-    <div class="col-xs-12 col-md-4">
-        <div class="row">
-            <div class="col-xs-12 col-sm-6 col-md-12">
-                <div class="update-form margin-bottom-20 alert-info">
-                    @using (Html.BeginForm())
-                    {
-                        @Html.AntiForgeryToken()
-                        @Html.ValidationSummary(true)
-                        @Html.HiddenFor(model => model.ID)
-                        <input type="hidden" name="loanPaymentId" id="loanPaymentId" value="@Model.ID" />
+@section Form {
+    @Html.HiddenFor(model => model.ID)
+    <input type="hidden" name="loanPaymentId" id="loanPaymentId" value="@Model.ID" />
 
-                        <div class="row">
-                            <div class="col-xs-12 col-lg-6">
-                                <div class="form-group">
-                                    @Html.LabelFor(model => model.DatePaid, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.DatePaid, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.DatePaid)
-                                </div>
-                                <div class="clearfix"></div>
+    <div class="update-form alert-info">
 
-                                <div class="form-group">
-                                    @Html.LabelFor(model => model.Base, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Base, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Base)
-                                </div>
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true)
 
-                                <div class="form-group">
-                                    @Html.LabelFor(model => model.Interest, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Interest, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Interest)
-                                </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.DatePaid, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.DatePaid, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.DatePaid)
+        </div>
+        <div class="clearfix"></div>
 
-                                <div class="form-group">
-                                    @Html.LabelFor(model => model.Additional, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Additional, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Additional)
-                                </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Base, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Base, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Base)
+        </div>
 
-                                <div class="form-group">
-                                    @Html.LabelFor(model => model.Escrow, new { htmlAttributes = new { @class = "control-label" } })
-                                    @Html.EditorFor(model => model.Escrow, new { htmlAttributes = new { @class = "form-control" } })
-                                    @Html.ValidationMessageFor(model => model.Escrow)
-                                </div>
-                            </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Interest, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Interest, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Interest)
+        </div>
 
-                            <div class="col-xs-12 col-lg-6">
-                                <h4>Select Payees</h4>
-                                @if ((ViewBag.Users as List<MyFinances.Models.ApplicationUser>).Any())
-                                {
-                                    foreach (var user in ViewBag.Users)
-                                    {
-                                        bool userCheck = (Model.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id) != null || ViewBag.Action == "Add Payment");
-                                        <div class="form-check">
-                                            <input type="checkbox" name="payeeId" value="@user.Id" class="form-check-input" id="@user.Id" checked="@userCheck" />
-                                            <label for="@user.Id" class="form-check-label">@user.FirstName @user.LastName</label>
-                                        </div>
-                                    }
-                                }
-                            </div>
-                            <div class="clearfix"></div>
-                            
-                            <div class="clearfix"></div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Additional, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Additional, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Additional)
+        </div>
 
-                            <div class="form-group text-center col-xs-12">
-                                <input type="submit" value="Save" class="btn btn-primary" />
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                @if (ViewBag.Action == "Edit Payment")
-                {
-                    <div class="margin-bottom-20">
-                        @Html.ActionLink("Delete Payment", "DeletePayment", new { id = Model.ID }, new { @class = "btn btn-danger confirmation",
-                            data_confirm_title = "Delete this payment for " + Model.Loan.Name + " Bill", data_confirm_message= "Are you sure you want to delete this payment for " + Model.Loan.Name + " Loan?", data_confirm_style="danger",
-                            data_toggle ="tooltip", data_placement="right", title="This will delete this 1 payment." })
-                    </div>
-                }
-            </div>
-
-            @Html.Partial("_LoanInfo", Model.Loan)
+        <div class="form-group">
+            @Html.LabelFor(model => model.Escrow, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Escrow, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Escrow)
         </div>
     </div>
+}
 
+@section Payees {
+    <div class="update-form alert-info">
+        @if ((ViewBag.Users as List<MyFinances.Models.ApplicationUser>).Any())
+        {
+            <div class="selectPayees">
+                <h4>Select Payees</h4>
+                @if ((ViewBag.Users as List<MyFinances.Models.ApplicationUser>).Any())
+                {
+                    foreach (MyFinances.Models.ApplicationUser user in ViewBag.Users)
+                    {
+                        var shared = Model.SharedWith.ToList().Find(x => x.SharedWithUser.Id == user.Id);
+                        bool userCheck = shared != null || ViewBag.Action == "Add Payment";
+                        var percent = (shared != null ? shared.SharedPercentage : Model.Loan.SharedWith.Where(x => x.SharedWithUser.Id == user.Id).FirstOrDefault().SharedPercentage);
+
+                        @Html.Partial("_SharedUser", user, new ViewDataDictionary { { "userCheck", userCheck }, { "percent", percent }, { "sharedPercentage", ViewBag.SharedPercentage } })
+                    }
+                }
+            </div>
+        }
+    </div>
+}
+
+@section BelowForm {
+    <input type="submit" value="Save" class="btn btn-primary pull-right" />
+
+    @if (ViewBag.Action == "Edit Payment")
+    {
+        @Html.ActionLink("Delete Payment", "DeletePayment", new { id = Model.ID }, new
+        {
+            @class = "btn btn-danger confirmation",
+            data_confirm_title = "Delete this payment for " + Model.Loan.Name + " Bill",
+            data_confirm_message = "Are you sure you want to delete this payment for " + Model.Loan.Name + " Loan?",
+            data_confirm_style = "danger",
+            data_toggle = "tooltip",
+            data_placement = "right",
+            title = "This will delete this 1 payment."
+        })
+    }
+}
+
+@section section2 {
+    @Html.Partial("_LoanInfo", Model.Loan)
+}
+
+@section section3 {
     @Html.Partial("_PaymentOutlook", Model.Loan)
-</div>
+}

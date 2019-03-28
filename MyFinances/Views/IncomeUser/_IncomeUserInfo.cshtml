@@ -1,8 +1,8 @@
-﻿@model MyFinances.Models.Income
+﻿@model MyFinances.Models.IncomeUser
 
 @if (ViewBag.Action != "Create")
 {
-    if (Model.IncomePayments != null && Model.IncomePayments.Any())
+    if (Model.IncomeUserPayments != null && Model.IncomeUserPayments.Any())
     {
         if (Model.IsActive)
         {
@@ -27,7 +27,6 @@
     }
     else
     {
-        <p class="alert alert-warning">There are currently no payments for this income.</p>
+        <p class="alert alert-warning">There are currently no payments for this income user.</p>
     }
 }
-

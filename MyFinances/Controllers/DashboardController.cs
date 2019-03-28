@@ -17,36 +17,17 @@ namespace MyFinances.Controllers
         public ActionResult Index()
         {
             DashboardViewModel viewModel = new DashboardViewModel();
-
-            IEnumerable<Bill> bills = db.Bills.Where(x => x.IsActive && (x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any())).Include(x => x.BillPayments).ToList().Populate(user).OrderBy(x => x.DueDate);
-            IEnumerable<Loan> loans = db.Loans.Where(x => x.IsActive && (x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id ).Any())).Include(x => x.LoanPayments).ToList().Populate(user).OrderBy(x => x.DueDate);
-
-            DateTime startDate = DateTime.Now;
-            foreach (Bill bill in bills) { startDate = (bill.DueDate <= startDate) ? bill.DueDate : startDate; }
-            foreach (Loan loan in loans) { startDate = (loan.DueDate <= startDate) ? loan.DueDate : startDate; }
-
-            startDate = GetUserStartDate(startDate, false);
-
-            viewModel.DateRanges = InitiateDateRanges(startDate, false, false, true);
-
-            foreach (DashboardDateRange range in viewModel.DateRanges)
-            {
-                List<DashboardItem> items = new List<DashboardItem>();
-                items.AddRange(bills.GetDashboardItems(range, user));
-                items.AddRange(loans.GetDashboardItems(range, user));
-                range.Items = items.OrderBy(x => x.Date);
-                
-                List<DashboardIncomeItem> incomeItems = new List<DashboardIncomeItem>();
-                List<ApplicationUser> payees = range.Items.Where(x => x.SharedWith != null && x.SharedWith.Any() && x.SharedWith.Where(y => y.Id != user.Id).Any()).SelectMany(x => x.SharedWith).Distinct().OrderBy(x => x.FirstDate).ThenBy(x => x.LastName).ToList();
-                foreach(ApplicationUser payee in payees)
-                {
-                    incomeItems.Add(new DashboardIncomeItem(payee.FirstName + " " + payee.LastName, range.StartDate, range.Items.Where(x => x.SharedWith != null && x.SharedWith.Any() && x.SharedWith.Where(y => y.Id == payee.Id).Any()).Sum(x => x.SharedAmount)));
-                }
-
-                range.IncomeItems.AddRange(incomeItems);
-            }
-
+            viewModel.DateRanges = GetDateRanges();
+            ViewBag.ShowViewMore = true;
             return View(viewModel);
+        }
+
+        public ActionResult More()
+        {
+            DashboardViewModel viewModel = new DashboardViewModel();
+            viewModel.DateRanges = GetDateRanges(true);
+            ViewBag.ShowViewMore = false;
+            return View("Index", viewModel);
         }
 
         public ActionResult History (int year = 0, bool displayMonth = false)
@@ -57,8 +38,9 @@ namespace MyFinances.Controllers
             viewModel.CurrentYear = year;
             viewModel.DisplayMonth = displayMonth;
             
-            IEnumerable<BillPayment> billPayments = db.BillPayments.Where(x => x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()).Include(x => x.Bill).Include(x => x.User).Include(x => x.SharedWith).OrderBy(x => x.DatePaid);
-            IEnumerable<LoanPayment> loanPayments = db.LoanPayments.Where(x => x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()).Include(x => x.Loan).Include(x => x.User).Include(x => x.SharedWith).OrderBy(x => x.DatePaid);
+            IEnumerable<BillPayment> billPayments = db.BillPayments.Where(x => x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()).Include(x => x.Bill).Include(x => x.User).Include(x => x.SharedWith.Select(y => y.SharedWithUser)).OrderBy(x => x.DatePaid);
+            IEnumerable<LoanPayment> loanPayments = db.LoanPayments.Where(x => x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any()).Include(x => x.Loan).Include(x => x.User).Include(x => x.SharedWith.Select(y => y.SharedWithUser)).OrderBy(x => x.DatePaid);
+            IEnumerable<IncomePayment> incomePayments = db.IncomePayments.Where(x => x.User.Id == user.Id).Include(x => x.Income).Include(x => x.User).OrderBy(x => x.Date);
 
             int maxYear = 0;
             int minYear = DateTime.Now.Year;
@@ -76,14 +58,22 @@ namespace MyFinances.Controllers
                 maxYear = (maxYearLoan > maxYear) ? maxYearLoan : maxYear;
                 minYear = (minYearLoan < minYear) ? minYearLoan : minYear;
             }
+            if (incomePayments.Any())
+            {
+                int maxYearIncome = incomePayments.Max(x => x.Date).Year;
+                int minYearIncome = incomePayments.Min(x => x.Date).Year;
+                maxYear = (maxYearIncome > maxYear) ? maxYearIncome : maxYear;
+                minYear = (minYearIncome < minYear) ? minYearIncome : minYear;
+            }
             
             viewModel.StartYear = minYear;
             viewModel.EndYear = maxYear;
 
             IEnumerable<BillPayment> yearBillPayments = billPayments.Where(x => x.DatePaid.Year == year);
             IEnumerable<LoanPayment> yearLoanPayments = loanPayments.Where(x => x.DatePaid.Year == year);
+            IEnumerable<IncomePayment> yearIncomePayments = incomePayments.Where(x => x.Date.Year == year);
 
-            if (yearBillPayments.Any() || yearLoanPayments.Any())
+            if (yearBillPayments.Any() || yearLoanPayments.Any() || yearIncomePayments.Any())
             {
                 DateTime startDate = DateTime.Now;
                 if (yearBillPayments.Any())
@@ -96,22 +86,80 @@ namespace MyFinances.Controllers
                     DateTime loanStartDate = yearLoanPayments.Min(x => x.DatePaid);
                     startDate = (loanStartDate < startDate) ? loanStartDate : startDate;
                 }
+                if (yearIncomePayments.Any())
+                {
+                    DateTime incomeStartDate = yearIncomePayments.Min(x => x.Date);
+                    startDate = (incomeStartDate < startDate) ? incomeStartDate : startDate;
+                }
 
                 startDate = GetUserStartDate(startDate, viewModel.DisplayMonth);
                 viewModel.DateRanges = InitiateDateRanges(startDate, viewModel.DisplayMonth, true);
-                viewModel.DateRanges = (user.PaycheckFrequency == PaymentFrequency.SemiMonthly) ? viewModel.DateRanges.OrderByDescending(x => x.StartDate.Month) : viewModel.DateRanges.OrderByDescending(x => x.StartDate);
+                viewModel.DateRanges = (user.PrimaryIncome.PaymentFrequency == PaymentFrequency.SemiMonthly) ? viewModel.DateRanges.OrderByDescending(x => x.StartDate.Month) : viewModel.DateRanges.OrderByDescending(x => x.StartDate);
 
                 foreach (DashboardDateRange range in viewModel.DateRanges)
                 {
                     List<DashboardItem> items = new List<DashboardItem>();
-                    items.AddRange(billPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
-                    items.AddRange(loanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
+                    items.AddRange(yearBillPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
+                    items.AddRange(yearLoanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
                     range.Items = items.OrderBy(x => x.Date);
+
+                    List<DashboardIncomeItem> incomeItems = new List<DashboardIncomeItem>();
+                    incomeItems.AddRange(yearIncomePayments.Where(x => x.Date >= range.StartDate && x.Date <= range.EndDate).Select(x => new DashboardIncomeItem(x)));
+                    range.IncomeItems = incomeItems.OrderBy(x => x.Date).ToList();
                 }
-                viewModel.DateRanges = viewModel.DateRanges.Where(x => x.Items.Any());
+                viewModel.DateRanges = viewModel.DateRanges.Where(x => x.Items.Any() || x.IncomeItems.Any());
             }
 
             return View(viewModel);
+        }
+
+        private IEnumerable<DashboardDateRange> GetDateRanges(bool restOfYear = false)
+        {
+            DateTime startDate = DateTime.Now;
+
+            IEnumerable<Bill> bills = db.Bills.Where(x => x.IsActive && (x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any())).Include(x => x.BillPayments).ToList().Populate(user).OrderBy(x => x.DueDate);
+            IEnumerable<Loan> loans = db.Loans.Where(x => x.IsActive && (x.User.Id == user.Id || x.SharedWith.Where(y => y.SharedWithUser.Id == user.Id).Any())).Include(x => x.LoanPayments).ToList().Populate(user).OrderBy(x => x.DueDate);
+            IEnumerable<Income> incomes = db.Incomes.Where(x => x.User.Id == user.Id && x.IsActive).Include(x => x.IncomePayments).ToList().Populate(user).OrderBy(x => x.Date);
+
+            if (bills.Any())
+            {
+                DateTime billStartDate = bills.Min(x => x.DueDate);
+                if (billStartDate < startDate) { startDate = billStartDate; }
+            }
+            if (loans.Any())
+            {
+                DateTime loanStartDate = loans.Min(x => x.DueDate);
+                if (loanStartDate < startDate) { startDate = loanStartDate; }
+            }
+            if (incomes.Any())
+            {
+                DateTime incomeStartDate = incomes.Min(x => x.Date);
+                DateTime incomeSecondStartDate = incomes.Where(x => x.PaymentFrequency == PaymentFrequency.SemiMonthly).Min(x => x.SecondDate);
+                if (incomeStartDate < startDate) { startDate = incomeStartDate; }
+                if (incomeSecondStartDate < startDate) { startDate = incomeSecondStartDate; }
+            }
+            
+            startDate = GetUserStartDate(startDate, false);
+
+            IEnumerable<DashboardDateRange> dateRanges = InitiateDateRanges(startDate, false, restOfYear, true);
+
+            foreach (DashboardDateRange range in dateRanges)
+            {
+                if (bills.Any() || loans.Any())
+                {
+                    List<DashboardItem> items = new List<DashboardItem>();
+                    if (bills.Any()) { items.AddRange(bills.GetDashboardItems(range, user)); }
+                    if (loans.Any()) { items.AddRange(loans.GetDashboardItems(range, user)); }
+                    range.Items = items.OrderBy(x => x.Date);
+                }
+                if (incomes.Any())
+                {
+                    List<DashboardIncomeItem> incomeItems = new List<DashboardIncomeItem>();
+                    incomeItems.AddRange(incomes.GetDashboardItems(range));
+                    range.IncomeItems.AddRange(incomeItems);
+                }
+            }
+            return dateRanges;
         }
 
         private DateTime GetEndDate (DateTime startDate, bool displayMonth)
@@ -145,39 +193,44 @@ namespace MyFinances.Controllers
 
         private DateTime GetUserStartDate (DateTime startDate, bool displayMonth)
         {
-            DateTime userDate = user.FirstDate;
-
-            if (!displayMonth && (user.PaycheckFrequency == PaymentFrequency.Weekly || user.PaycheckFrequency == PaymentFrequency.BiWeekly))
+            if (user.PrimaryIncome != null)
             {
-                while (userDate < startDate)
+                DateTime userDate = user.PrimaryIncome.Date;
+
+                if (!displayMonth && (user.PrimaryIncome.PaymentFrequency == PaymentFrequency.Weekly || user.PrimaryIncome.PaymentFrequency == PaymentFrequency.BiWeekly))
                 {
-                    if (user.PaycheckFrequency == PaymentFrequency.Weekly)
+                    while (userDate < startDate)
                     {
-                        userDate = userDate.AddDays(7);
+                        if (user.PrimaryIncome.PaymentFrequency == PaymentFrequency.Weekly)
+                        {
+                            userDate = user.PrimaryIncome.Date.AddDays(7);
+                        }
+                        else if (user.PrimaryIncome.PaymentFrequency == PaymentFrequency.BiWeekly)
+                        {
+                            userDate = user.PrimaryIncome.Date.AddDays(14);
+                        }
                     }
-                    else if (user.PaycheckFrequency == PaymentFrequency.BiWeekly)
+                    while (userDate >= startDate)
                     {
-                        userDate = userDate.AddDays(14);
+                        if (user.PrimaryIncome.PaymentFrequency == PaymentFrequency.Weekly)
+                        {
+                            userDate = user.PrimaryIncome.Date.AddDays(-7);
+                        }
+                        else if (user.PrimaryIncome.PaymentFrequency == PaymentFrequency.BiWeekly)
+                        {
+                            userDate = user.PrimaryIncome.Date.AddDays(-14);
+                        }
                     }
                 }
-                while (userDate >= startDate)
+                else if (displayMonth || user.PrimaryIncome.PaymentFrequency == PaymentFrequency.SemiMonthly || user.PrimaryIncome.PaymentFrequency == PaymentFrequency.Monthly || user.PrimaryIncome.PaymentFrequency == PaymentFrequency.BiMonthly || user.PrimaryIncome.PaymentFrequency == PaymentFrequency.SemiYearly || user.PrimaryIncome.PaymentFrequency == PaymentFrequency.Yearly)
                 {
-                    if (user.PaycheckFrequency == PaymentFrequency.Weekly)
-                    {
-                        userDate = userDate.AddDays(-7);
-                    }
-                    else if (user.PaycheckFrequency == PaymentFrequency.BiWeekly)
-                    {
-                        userDate = userDate.AddDays(-14);
-                    }
+                    userDate = new DateTime(startDate.Year, startDate.Month, user.PrimaryIncome.Date.Day);
                 }
-            }
-            else if (displayMonth || user.PaycheckFrequency == PaymentFrequency.SemiMonthly || user.PaycheckFrequency == PaymentFrequency.Monthly || user.PaycheckFrequency == PaymentFrequency.BiMonthly || user.PaycheckFrequency == PaymentFrequency.SemiYearly || user.PaycheckFrequency == PaymentFrequency.Yearly)
+                return userDate;
+            } else
             {
-                userDate = new DateTime(startDate.Year, startDate.Month, userDate.Day);
+                return startDate;
             }
-
-            return userDate;
         }
 
         private IEnumerable<DashboardDateRange> InitiateDateRanges (DateTime startDate, bool displayMonth, bool restOfYear = false, bool updateUser = false)
@@ -188,28 +241,16 @@ namespace MyFinances.Controllers
                 year++;
             }
             DateTime endDate = GetEndDate(startDate, displayMonth).AddDays(-1);
-            if (updateUser)
-            {
-                user.FirstDate = startDate;
-                user.SecondDate = endDate.AddDays(1);
-                //userManager.Update(user);
-            }
 
             List<DashboardDateRange> dateRanges = new List<DashboardDateRange>();
 
             int count = 0;
-            while ((restOfYear && (startDate.Year == year || endDate.Year == year)) || (count < 10))
+            while ((restOfYear && (startDate.Year == year || endDate.Year == year)) || (count < 4))
             {
                 count++;
-                decimal paycheck = user.FirstPaycheck;
-                if (user.PaycheckFrequency == PaymentFrequency.SemiMonthly && startDate.Day == user.SecondDate.Day)
-                {
-                    paycheck = user.SecondPaycheck;
-                }
                 dateRanges.Add(new DashboardDateRange(
                     startDate,
-                    endDate,
-                    paycheck
+                    endDate
                 ));
 
                 startDate = endDate.AddDays(1);

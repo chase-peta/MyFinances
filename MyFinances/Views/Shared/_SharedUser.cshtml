@@ -1,0 +1,26 @@
+﻿@model MyFinances.Models.ApplicationUser
+
+@{ 
+    bool userCheck = (bool)ViewData["userCheck"];
+    var percent = ViewData["percent"];
+    Array sharedPercent = (Array)ViewData["sharedPercentage"];
+}
+
+<div class="row">
+    <div class="col-xs-8">
+        <div class="form-check @(userCheck ? "with-dropdown" : "")">
+            <input type="checkbox" name="payeeId" value="@Model.Id" class="form-check-input" id="@Model.Id" checked="@userCheck" />
+            <label for="@Model.Id" class="form-check-label">@Model.FirstName @Model.LastName</label>
+        </div>
+    </div>
+    <div class="col-xs-4">
+        <div class="form-group" style="@(userCheck ? "" : "display: none;")" id="@Model.Id-dropdown">
+            <select name="sharedPercent" class="form-control" id="shared-percent-@Model.Id">
+                @foreach (var item in sharedPercent)
+                {
+                    <option value="@Model.Id|@item" @(item.ToString() == percent.ToString() ? "selected" : "")>@item</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>

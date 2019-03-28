@@ -38,22 +38,26 @@ namespace MyFinances.Controllers
             ViewBag.Action = "Create";
             ViewBag.Calculate = false;
             ViewBag.Users = GetAvailableUsers();
-            return View("Details", new Loan());
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
+            Loan loan = new Loan();
+            loan.FirstPaymentDate = DateTime.Today;
+            return View("Details", loan);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(string button, string[] payeeId, [Bind(Include = "Name,LoanAmount,InterestRate,FirstPaymentDate,Additional,Escrow,Term,InterestCompound,PaymentInterestRate,IsShared")] Loan loan)
+        public ActionResult Create(string button, string[] payeeId, string[] sharedPercent, [Bind(Include = "Name,LoanAmount,InterestRate,FirstPaymentDate,Additional,Escrow,Term,InterestCompound,PaymentInterestRate,IsShared")] Loan loan)
         {
             ViewBag.Action = "Create";
             ViewBag.Calculate = false;
             if (ModelState.IsValid)
             {
+                loan.BasePayment = loan.CalculateMonthlyPayment();
+                loan.User = db.Users.Find(user.Id);
                 if (button == "Save")
                 {
-                    loan.User = db.Users.Find(user.Id);
                     db.Loans.Add(loan);
-                    UpdateLoanShared(loan, payeeId);
+                    UpdateLoanShared(loan, payeeId, sharedPercent);
                     db.SaveChanges();
                     return RedirectToAction("Index");
                 }
@@ -61,6 +65,7 @@ namespace MyFinances.Controllers
                 loan = loan.Populate(user);
             }
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", loan);
         }
         
@@ -74,33 +79,35 @@ namespace MyFinances.Controllers
                 return HttpNotFound();
             }
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", loan);
         }
         
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(string button, string[] payeeId, [Bind(Include = "ID,Name,LoanAmount,InterestRate,FirstPaymentDate,Additional,Escrow,Term,InterestCompound,PaymentInterestRate,IsShared")] Loan subLoan)
+        public ActionResult Edit(string button, string[] payeeId, string[] sharedPercent, [Bind(Include = "ID,Name,LoanAmount,InterestRate,FirstPaymentDate,Additional,Escrow,Term,InterestCompound,PaymentInterestRate,IsShared")] Loan subLoan)
         {
             ViewBag.Action = "Edit";
             ViewBag.Calculate = false;
-            Loan loan = db.Loans.Find(subLoan.ID);
+            Loan loan = db.Loans.Where(x => x.ID == subLoan.ID).Include(x => x.SharedWith).FirstOrDefault();
             if (loan == null || loan.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
-            loan = loan.MapSubmit(subLoan).Populate(user);
+            loan = loan.MapSubmit(subLoan);
             if (ModelState.IsValid)
             {
                 if (button == "Save")
                 {
                     db.Entry(loan).State = EntityState.Modified;
-                    UpdateLoanShared(loan, payeeId);
+                    UpdateLoanShared(loan, payeeId, sharedPercent);
                     db.SaveChanges();
                     return RedirectToAction("Details", new { id = loan.ID });
                 }
                 ViewBag.Calculate = true;
             }
             ViewBag.Users = GetAvailableUsers();
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Details", loan);
         }
 
@@ -154,37 +161,49 @@ namespace MyFinances.Controllers
                 return HttpNotFound();
             }
 
-            LoanPayment payment = new LoanPayment();
-            payment.DatePaid = loan.NextPayment.Date;
-            payment.Base = loan.NextPayment.Base;
-            payment.Additional = loan.NextPayment.Additional;
-            payment.Escrow = loan.NextPayment.Escrow;
-            payment.Interest = loan.NextPayment.Interest;
-            payment.Loan = loan;
+            LoanPayment payment = new LoanPayment()
+            {
+                DatePaid = loan.NextPayment.Date,
+                Base = loan.NextPayment.Base,
+                Additional = loan.NextPayment.Additional,
+                Escrow = loan.NextPayment.Escrow,
+                Interest = loan.NextPayment.Interest,
+                Loan = loan
+            };
             ViewBag.Users = GetAvailableUsers(loan);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", payment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddPayment (int? id, string[] payeeId, [Bind(Include = "DatePaid,Base,Additional,Escrow,Interest")] LoanPayment loanPayment)
+        public ActionResult AddPayment (int? id, string[] payeeId, string[] sharedPercent, [Bind(Include = "DatePaid,Base,Additional,Escrow,Interest")] LoanPayment loanPayment)
         {
             ViewBag.Action = "Add Payment";
             ViewBag.Calculate = false;
-            loanPayment.Loan = GetLoan(id);
+            loanPayment.Loan = GetLoan(id).Populate(user);
             if (loanPayment.Loan == null || loanPayment.Loan.User.Id != user.Id)
             {
                 return HttpNotFound();
             }
             if (ModelState.IsValid)
             {
+                IEnumerable<LoanPayment> payments = db.LoanPayments.Where(x => x.Loan.ID == loanPayment.Loan.ID && x.DatePaid < loanPayment.DatePaid).OrderBy(x => x.DatePaid);
+                if (payments != null && payments.Any())
+                {
+                    loanPayment.Principal = payments.LastOrDefault().Principal - loanPayment.Base - loanPayment.Additional;
+                } else
+                {
+                    loanPayment.Principal = loanPayment.Loan.LoanAmount - loanPayment.Base - loanPayment.Additional;
+                }
                 loanPayment.User = db.Users.Find(user.Id);
                 db.LoanPayments.Add(loanPayment);
-                UpdateLoanPaymentShared(loanPayment, payeeId);
+                UpdateLoanPaymentShared(loanPayment, payeeId, sharedPercent);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = loanPayment.Loan.ID });
             }
             ViewBag.Users = GetAvailableUsers(loanPayment.Loan);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", loanPayment);
         }
 
@@ -198,12 +217,13 @@ namespace MyFinances.Controllers
                 return HttpNotFound();
             }
             ViewBag.Users = GetAvailableUsers(loanPayment.Loan);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", loanPayment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditPayment (int? id, string[] payeeId, [Bind(Include = "DatePaid,Base,Additional,Escrow,Interest")] LoanPayment loanPayment)
+        public ActionResult EditPayment (int? id, string[] payeeId, string[] sharedPercent, [Bind(Include = "DatePaid,Base,Additional,Escrow,Interest")] LoanPayment loanPayment)
         {
             ViewBag.Action = "Edit Payment";
             ViewBag.Calculate = false;
@@ -216,12 +236,22 @@ namespace MyFinances.Controllers
                 lp.Additional = loanPayment.Additional;
                 lp.Escrow = loanPayment.Escrow;
                 lp.Interest = loanPayment.Interest;
+                IEnumerable<LoanPayment> payments = db.LoanPayments.Where(x => x.Loan.ID == lp.Loan.ID && x.DatePaid < lp.DatePaid).OrderBy(x => x.DatePaid);
+                if (payments != null && payments.Any())
+                {
+                    lp.Principal = payments.LastOrDefault().Principal - loanPayment.Base - loanPayment.Additional;
+                }
+                else
+                {
+                    lp.Principal = loanPayment.Loan.LoanAmount - loanPayment.Base - loanPayment.Additional;
+                }
                 db.Entry(lp).State = EntityState.Modified;
-                UpdateLoanPaymentShared(lp, payeeId);
+                UpdateLoanPaymentShared(lp, payeeId, sharedPercent);
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = lp.Loan.ID });
             }
             ViewBag.Users = GetAvailableUsers(loanPayment.Loan);
+            ViewBag.SharedPercentage = Enum.GetValues(typeof(SharedPercentage));
             return View("Payment", lp);
         }
 

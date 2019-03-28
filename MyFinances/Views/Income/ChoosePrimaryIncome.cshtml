@@ -1,0 +1,41 @@
+﻿@model MyFinances.Models.PrimaryIncome
+
+@{ ViewBag.Title = ViewBag.Action; }
+
+<div class="clear-after">
+    <div class="pull-right">
+        @Html.ActionLink("Back to all Incomes", "Index", null, new { @class = "btn btn-primary" })
+    </div>
+    <h1>@ViewBag.Title</h1>
+</div>
+
+@section Form {
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div class="update-form standard">
+        <div class="row">
+            @if ((ViewBag.Incomes as List<MyFinances.Models.Income>).Any())
+            {
+                foreach (MyFinances.Models.Income income in ViewBag.Incomes)
+                {
+                    bool incomeChecked = false;
+                    if (Model.Income != null)
+                    {
+                        incomeChecked = (Model.Income.ID == income.ID);
+                    }
+                    <div class="col-xs-12 col-md-6">
+                        <div class="form-check">
+                            <input type="radio" name="incomeId" value="@income.ID" class="form-check-input" id="@income.ID" checked="@incomeChecked" />
+                            <label for="@income.ID" class="form-check-label">@income.Name</label>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+@section BelowForm {
+    <input type="submit" value="Save" class="btn btn-primary pull-right" />
+}

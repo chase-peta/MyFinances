@@ -4,6 +4,7 @@
 
 <div class="clear-after">
     <div class="pull-right">
+        @Html.ActionLink("Add Income from User", "Create", "IncomeUser", null, new { @class = "btn btn-primary" })
         @Html.ActionLink("Add Income", "Create", null, new { @class = "btn btn-primary" })
     </div>
     <h1>@ViewBag.Title</h1>
@@ -69,7 +70,14 @@
                     }
                 </div>
                 @Html.ActionLink("Chooase Primary Income", "ChoosePrimaryIncome", null, new { @class = "btn btn-success" })
-                @ViewBag.PrimaryIncome
+                @if (ViewBag.PrimaryIncome != null && ViewBag.PrimaryIncome.Income != null)
+                {
+                    @ViewBag.PrimaryIncome.Income.Name
+                }
+                else
+                {
+                    <span>No Primary Income Selected</span>
+                }
             </div>
         }
         else

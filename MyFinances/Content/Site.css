@@ -158,3 +158,22 @@ footer p {
 .table > tbody > tr.not-active a {
     color: #000;
 }
+
+.selectPayees .row,
+.selectBills .row,
+.selectLoans .row {
+    padding: 6px 0;
+    border-bottom: 1px solid #cccccc;
+}
+
+.selectPayees .form-group {
+    margin-bottom: 0;
+}
+
+.form-check {
+    transition: padding-top .5s ease-in;
+}
+
+.form-check.with-dropdown {
+    padding-top: 6px;
+}

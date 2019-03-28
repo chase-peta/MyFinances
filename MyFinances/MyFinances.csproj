@@ -26,6 +26,7 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <ApplicationInsightsResourceId>/subscriptions/5aba3748-e7f3-41e6-a9d8-06399d9adbc6/resourcegroups/Default-ApplicationInsights-EastUS/providers/microsoft.insights/components/MyFinances</ApplicationInsightsResourceId>
+    <Use64BitIISExpress />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,6 +47,12 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.AI.Agent.Intercept, Version=2.0.6.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.ApplicationInsights.Agent.Intercept.2.0.6\lib\net45\Microsoft.AI.Agent.Intercept.dll</HintPath>
       <Private>True</Private>
@@ -145,12 +152,6 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="EntityFramework">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core">
       <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.2.1\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
     </Reference>
@@ -202,6 +203,7 @@
     <Compile Include="Controllers\BillsController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\IncomeUserController.cs" />
     <Compile Include="Controllers\IncomeController.cs" />
     <Compile Include="Controllers\LoansController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
@@ -240,23 +242,52 @@
     <Compile Include="Migrations\201708310322305_AddIncomes.Designer.cs">
       <DependentUpon>201708310322305_AddIncomes.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\AddLoans.cs" />
-    <Compile Include="Migrations\AddLoans.Designer.cs">
-      <DependentUpon>AddLoans.cs</DependentUpon>
+    <Compile Include="Migrations\201708310343336_AddPrimaryIncome.cs" />
+    <Compile Include="Migrations\201708310343336_AddPrimaryIncome.Designer.cs">
+      <DependentUpon>201708310343336_AddPrimaryIncome.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\AddBills.cs" />
-    <Compile Include="Migrations\AddBills.Designer.cs">
-      <DependentUpon>AddBills.cs</DependentUpon>
+    <Compile Include="Migrations\201808280448157_SharedPercentage.cs" />
+    <Compile Include="Migrations\201808280448157_SharedPercentage.Designer.cs">
+      <DependentUpon>201808280448157_SharedPercentage.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\InitialCreate.cs" />
-    <Compile Include="Migrations\InitialCreate.Designer.cs">
-      <DependentUpon>InitialCreate.cs</DependentUpon>
+    <Compile Include="Migrations\201808290307016_StoreBasePayemntLoans.cs" />
+    <Compile Include="Migrations\201808290307016_StoreBasePayemntLoans.Designer.cs">
+      <DependentUpon>201808290307016_StoreBasePayemntLoans.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201703290148019_AddLoans.cs" />
+    <Compile Include="Migrations\201703290148019_AddLoans.Designer.cs">
+      <DependentUpon>201703290148019_AddLoans.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201703212148567_AddBills.cs" />
+    <Compile Include="Migrations\201703212148567_AddBills.Designer.cs">
+      <DependentUpon>201703212148567_AddBills.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201703210524489_InitialCreate.cs" />
+    <Compile Include="Migrations\201703210524489_InitialCreate.Designer.cs">
+      <DependentUpon>201703210524489_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201808312010029_CalculateBasePaymentLoans.cs" />
+    <Compile Include="Migrations\201808312010029_CalculateBasePaymentLoans.Designer.cs">
+      <DependentUpon>201808312010029_CalculateBasePaymentLoans.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201808312020474_StorePrincipleLoanPayments.cs" />
+    <Compile Include="Migrations\201808312020474_StorePrincipleLoanPayments.Designer.cs">
+      <DependentUpon>201808312020474_StorePrincipleLoanPayments.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201808312021581_CalculatePrincipleLoanPayments.cs" />
+    <Compile Include="Migrations\201808312021581_CalculatePrincipleLoanPayments.Designer.cs">
+      <DependentUpon>201808312021581_CalculatePrincipleLoanPayments.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201809060132060_AddIncomeUser.cs" />
+    <Compile Include="Migrations\201809060132060_AddIncomeUser.Designer.cs">
+      <DependentUpon>201809060132060_AddIncomeUser.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Bill.cs" />
     <Compile Include="Models\DashboardViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\Income.cs" />
+    <Compile Include="Models\IncomeUser.cs" />
     <Compile Include="Models\Loan.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
@@ -330,6 +361,13 @@
     <Content Include="Views\Income\Payment.cshtml" />
     <Content Include="Views\Income\_PaymentAverage.cshtml" />
     <Content Include="Views\Income\_IncomeInfo.cshtml" />
+    <Content Include="Views\Income\ChoosePrimaryIncome.cshtml" />
+    <Content Include="Views\Shared\_SharedUser.cshtml" />
+    <Content Include="Views\IncomeUser\_IncomeUserInfo.cshtml" />
+    <Content Include="Views\IncomeUser\_PaymentAverage.cshtml" />
+    <Content Include="Views\IncomeUser\ChoosePrimaryIncome.cshtml" />
+    <Content Include="Views\IncomeUser\Details.cshtml" />
+    <Content Include="Views\IncomeUser\Payment.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -370,14 +408,35 @@
     <EmbeddedResource Include="Migrations\201708310322305_AddIncomes.resx">
       <DependentUpon>201708310322305_AddIncomes.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\AddLoans.resx">
-      <DependentUpon>AddLoans.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201708310343336_AddPrimaryIncome.resx">
+      <DependentUpon>201708310343336_AddPrimaryIncome.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\AddBills.resx">
-      <DependentUpon>AddBills.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201808280448157_SharedPercentage.resx">
+      <DependentUpon>201808280448157_SharedPercentage.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\InitialCreate.resx">
-      <DependentUpon>InitialCreate.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201808290307016_StoreBasePayemntLoans.resx">
+      <DependentUpon>201808290307016_StoreBasePayemntLoans.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201703290148019_AddLoans.resx">
+      <DependentUpon>201703290148019_AddLoans.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201703212148567_AddBills.resx">
+      <DependentUpon>201703212148567_AddBills.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201703210524489_InitialCreate.resx">
+      <DependentUpon>201703210524489_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201808312010029_CalculateBasePaymentLoans.resx">
+      <DependentUpon>201808312010029_CalculateBasePaymentLoans.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201808312020474_StorePrincipleLoanPayments.resx">
+      <DependentUpon>201808312020474_StorePrincipleLoanPayments.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201808312021581_CalculatePrincipleLoanPayments.resx">
+      <DependentUpon>201808312021581_CalculatePrincipleLoanPayments.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201809060132060_AddIncomeUser.resx">
+      <DependentUpon>201809060132060_AddIncomeUser.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
@@ -394,16 +453,7 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>True</UseIIS>
-          <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>58990</DevelopmentServerPort>
-          <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:58990/</IISUrl>
-          <NTLMAuthentication>False</NTLMAuthentication>
-          <UseCustomServer>False</UseCustomServer>
-          <CustomServerUrl>
-          </CustomServerUrl>
-          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+          <SaveServerSettingsInUserFile>True</SaveServerSettingsInUserFile>
         </WebProjectProperties>
       </FlavorProperties>
     </VisualStudio>

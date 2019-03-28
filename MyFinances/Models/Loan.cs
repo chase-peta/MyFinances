@@ -8,8 +8,6 @@ using System.Web;
 
 namespace MyFinances.Models
 {
-
-
     public class Loan : BaseFinances
     {
         [Required]
@@ -39,30 +37,33 @@ namespace MyFinances.Models
         [Display(Name = "Interest Compound"), Required]
         public InterestCompound InterestCompound { get; set; }
 
-        [Display(Name = "This Bill Is Shared")]
+        [Display(Name = "This Loan Is Shared")]
         public bool IsShared { get; set; }
 
         public virtual ICollection<SharedLoan> SharedWith { get; set; }
 
         public virtual ICollection<LoanPayment> LoanPayments { get; set; }
 
+        [Display(Name = "Base Payment"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal BasePayment { get; set; }
+
         [NotMapped]
         public List<LoanPayment> NotOwnerLoanPayments { get; set; }
 
         [NotMapped]
         public bool NotOwner { get; set; }
-        
-        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedMonthlyPayment { get; set; }
+
+        [NotMapped, Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal YouPay { get; set; }
+
+        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal OwnerPays { get; set; }
 
         [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Principal { get; set; }
 
-        [NotMapped, Display(Name = "Base Payment"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal BasePayment { get; set; }
-
         [NotMapped, Display(Name = "Monthly Payment"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal MonthlyPayment { get; set; }
+        public decimal MonthlyPayment { get { return BasePayment + Additional + Escrow;  } }
 
         [NotMapped, Display(Name = "Due Date"), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime DueDate { get; set; }
@@ -70,7 +71,7 @@ namespace MyFinances.Models
         [NotMapped, Display(Name = "Last Payment Date"), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime LastPaymentDate { get; set; }
 
-        [NotMapped, Display(Name = "Last Payment Date"), DisplayFormat(DataFormatString = "{0:c}")]
+        [NotMapped, Display(Name = "Last Payment Amount"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal LastPaymentAmount { get; set; }
 
         [NotMapped, Display(Name = "Payments Remaining"), DisplayFormat(DataFormatString = "{0} Months")]
@@ -101,13 +102,17 @@ namespace MyFinances.Models
             Loan = new Loan();
         }
 
-        public SharedLoan (Loan loan, ApplicationUser user)
+        public SharedLoan (Loan loan, ApplicationUser user, SharedPercentage percentage)
         {
             Loan = loan;
             SharedWithUser = user;
+            SharedPercentage = percentage;
         }
 
         public virtual Loan Loan { get; set; }
+
+        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal Amount { get { return Loan.MonthlyPayment * ((int)SharedPercentage / 100M); } }
     }
 
     public static class LoanHelpers
@@ -122,48 +127,32 @@ namespace MyFinances.Models
             return newLoans;
         }
 
-        public static List<DashboardItem> GetDashboardItems (this IEnumerable<Loan> loans, DashboardDateRange range, ApplicationUser user)
-        {
-            List<DashboardItem> items = new List<DashboardItem>();
-            foreach (Loan loan in loans)
-            {
-                foreach (LoanOutlook outlook in loan.LoanOutlook.Where(x => x.Date >= range.StartDate && x.Date <= range.EndDate))
-                {
-                    items.Add(new DashboardItem(outlook));
-                }
-
-                if (loan.LoanPayments.Any())
-                {
-                    items.AddRange(loan.LoanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
-                }
-            }
-
-            return items;
-        }
-
         public static Loan Populate (this Loan loan, ApplicationUser user)
         {
             loan.NotOwner = loan.User.Id != user.Id;
             loan.DueDate = loan.FirstPaymentDate;
-            loan.BasePayment = loan.CalculateMonthlyPayment();
-            loan.MonthlyPayment = loan.BasePayment + loan.Additional + loan.Escrow;
             loan.Principal = loan.LoanAmount;
+            loan.OwnerPays = loan.MonthlyPayment - ((loan.SharedWith == null) ? 0 : loan.SharedWith.Sum(x => x.Amount));
+            if (loan.NotOwner)
+            {
+                loan.YouPay = loan.SharedWith.Where(x => x.SharedWithUser.Id == user.Id).FirstOrDefault().Amount;
+            }
+            else
+            {
+                loan.YouPay = loan.OwnerPays;
+            }
             DateTime lastPaymentDate = loan.FirstPaymentDate.AddMonths(-1);
 
             if (loan.LoanPayments != null && loan.LoanPayments.Any())
             {
-                foreach(LoanPayment lp in loan.LoanPayments.OrderBy(x => x.DatePaid))
-                {
-                    loan.Principal -= lp.Base + lp.Additional;
-                    lp.Principal = loan.Principal;
-                }
                 LoanPayment lastPayment = loan.LoanPayments.OrderBy(x => x.DatePaid).LastOrDefault();
                 if (lastPayment != null)
                 {
                     lastPaymentDate = lastPayment.DatePaid;
                     loan.LastPaymentDate = lastPayment.DatePaid;
                     loan.LastPaymentAmount = lastPayment.Payment;
-                    loan.DueDate = lastPayment.DatePaid.AddMonths(1);
+                    loan.Principal = lastPayment.Principal;
+                    loan.DueDate = loan.GetNextDueDate(loan.LastPaymentDate, user);
                 }
                 if (loan.NotOwner)
                 {
@@ -186,7 +175,6 @@ namespace MyFinances.Models
                     loan.PaymentMaxYear = loan.LoanPayments.Max(x => x.DatePaid.Year);
                 }
             }
-            loan.SharedMonthlyPayment = loan.MonthlyPayment / (loan.SharedWith.Count() + 1);
 
             loan.LoanOutlook = loan.GetLoanOutlook(lastPaymentDate);
             if (loan.LoanOutlook.Any()) {
@@ -204,6 +192,71 @@ namespace MyFinances.Models
             return loan;
         }
 
+        public static List<DashboardItem> GetDashboardItems(this IEnumerable<Loan> loans, DashboardDateRange range, ApplicationUser user)
+        {
+            List<DashboardItem> items = new List<DashboardItem>();
+            foreach (Loan loan in loans)
+            {
+                foreach (LoanOutlook outlook in loan.LoanOutlook.Where(x => x.Date >= range.StartDate && x.Date <= range.EndDate))
+                {
+                    items.Add(new DashboardItem(outlook));
+                }
+
+                if (loan.LoanPayments.Any())
+                {
+                    items.AddRange(loan.LoanPayments.Where(x => x.DatePaid >= range.StartDate && x.DatePaid <= range.EndDate).Select(x => new DashboardItem(x, user)));
+                }
+            }
+
+            return items;
+        }
+
+        public static DateTime GetNextDueDate(this Loan loan, DateTime date, ApplicationUser user)
+        {
+            //switch (loan.PaymentFrequency)
+            //{
+            //    case PaymentFrequency.Weekly:
+            //        date = date.AddDays(7);
+            //        break;
+            //    case PaymentFrequency.BiWeekly:
+            //        date = date.AddDays(14);
+            //        break;
+            //    case PaymentFrequency.SemiMonthly:
+            //        DateTime fDate = new DateTime(date.Year, date.Month, user.FirstDate.Day);
+            //        DateTime sDate = new DateTime(date.Year, date.Month, user.SecondDate.Day);
+            //        if (date == fDate)
+            //        {
+            //            date = sDate;
+            //        }
+            //        else if (date == sDate)
+            //        {
+            //            date = fDate.AddMonths(1);
+            //        }
+            //        else if (date < sDate)
+            //        {
+            //            date = sDate.AddDays((date - fDate).Days);
+            //        }
+            //        else
+            //        {
+            //            date = fDate.AddMonths(1).AddDays((date - sDate).Days);
+            //        }
+            //        break;
+            //    case PaymentFrequency.Monthly:
+            //        date = date.AddMonths(1);
+            //        break;
+            //    case PaymentFrequency.BiMonthly:
+            //        date = date.AddMonths(2);
+            //        break;
+            //    case PaymentFrequency.SemiYearly:
+            //        date = date.AddMonths(6);
+            //        break;
+            //    case PaymentFrequency.Yearly:
+            //        date = date.AddYears(1);
+            //        break;
+            //}
+            return date.AddMonths(1);
+        }
+
         public static Loan MapSubmit (this Loan loan, Loan l)
         {
             loan.Name = l.Name;
@@ -216,10 +269,11 @@ namespace MyFinances.Models
             loan.PaymentInterestRate = l.PaymentInterestRate;
             loan.InterestCompound = l.InterestCompound;
             loan.IsShared = l.IsShared;
+            loan.BasePayment = loan.CalculateMonthlyPayment();
             return loan;
         }
 
-        private static decimal CalculateMonthlyPayment(this Loan loan)
+        public static decimal CalculateMonthlyPayment(this Loan loan)
         {
             double mp = 0.0;
 
@@ -399,7 +453,7 @@ namespace MyFinances.Models
         public decimal Payment { get { return Interest + Base + Additional + Escrow; } }
 
         [Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedPayment { get { return Payment / (Loan.SharedWith.Count() + 1);  } }
+        public decimal YouPay { get { return Loan.YouPay; } }
 
         [Display(Name = "Principal"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Principal { get; set; }
@@ -429,15 +483,15 @@ namespace MyFinances.Models
         [Column(TypeName = "money"), DataType(DataType.Currency), Required]
         public decimal Interest { get; set; }
 
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal Principal { get; set; }
+
         public virtual Loan Loan { get; set; }
 
         public virtual ICollection<SharedLoanPayment> SharedWith { get; set; }
 
-        [NotMapped, Display(Name = "Each Pay"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedAmount { get { return Payment / (SharedWith.Count() + 1); } }
-
-        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal Principal { get; set; }
+        [NotMapped, Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal YouPay { get { return Payment - SharedWith.Sum(x => x.Amount); } }
 
         [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Payment { get { return Additional + Base + Escrow + Interest; } }
@@ -450,12 +504,16 @@ namespace MyFinances.Models
             LoanPayment = new LoanPayment();
         }
 
-        public SharedLoanPayment (LoanPayment loanPayment, ApplicationUser user)
+        public SharedLoanPayment (LoanPayment loanPayment, ApplicationUser user, SharedPercentage percentage)
         {
             LoanPayment = loanPayment;
             SharedWithUser = user;
+            SharedPercentage = percentage;
         }
 
         public virtual LoanPayment LoanPayment { get; set; }
+
+        [NotMapped, DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal Amount { get { return LoanPayment.Payment * ((int)SharedPercentage / 100M); } }
     }
 }

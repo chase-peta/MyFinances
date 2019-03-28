@@ -14,7 +14,7 @@ namespace MyFinances.Controllers
         public ActionResult Index(bool showInactive = false)
         {
             ViewBag.ShowInactive = showInactive;
-            //ViewBag.PrimaryIncome = GetPrimaryIncome();
+            ViewBag.PrimaryIncome = GetPrimaryIncome();
             return View(GetIncomes(showInactive));
         }
 
@@ -32,10 +32,12 @@ namespace MyFinances.Controllers
         public ActionResult Create ()
         {
             ViewBag.Action = "Create";
-            Income income = new Income();
-            income.PaymentFrequency = PaymentFrequency.Monthly;
-            income.Date = DateTime.Now;
-            income.SecondDate = DateTime.Now.AddMonths(1);
+            Income income = new Income()
+            {
+                PaymentFrequency = PaymentFrequency.Monthly,
+                Date = DateTime.Now,
+                SecondDate = DateTime.Now.AddMonths(1)
+            };
             return View("Details", income);
         }
 
@@ -127,6 +129,38 @@ namespace MyFinances.Controllers
             return RedirectToAction("Index");
         }
 
+        public ActionResult ChoosePrimaryIncome ()
+        {
+            ViewBag.Action = "Choose Primary Income";
+            ViewBag.Incomes = GetIncomes(false);
+            return View(GetPrimaryIncome());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ChoosePrimaryIncome(int? incomeId)
+        {
+            ViewBag.Action = "Choose Primary Income";
+            PrimaryIncome primaryIncome = GetPrimaryIncome();
+            if (ModelState.IsValid && incomeId != null)
+            {
+                bool newEntry = (primaryIncome.ID == 0);
+                primaryIncome.Income = db.Incomes.Find(incomeId);
+                primaryIncome.User = db.Users.Find(user.Id);
+                if (newEntry)
+                {
+                    db.PrimaryIncome.Add(primaryIncome);
+                } else
+                {
+                    db.Entry(primaryIncome).State = EntityState.Modified;
+                }
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            ViewBag.Incomes = GetIncomes(false);
+            return View(GetPrimaryIncome());
+        }
+
         public ActionResult AddPayment (int? id)
         {
             ViewBag.Action = "Add Payment";
@@ -166,7 +200,7 @@ namespace MyFinances.Controllers
             {
                 incomePayment.User = db.Users.Find(user.Id);
                 db.IncomePayments.Add(incomePayment);
-                //db.Entry(saveBillForNextPayment(billPayment)).State = EntityState.Modified;
+                db.Entry(SaveIncomeForNextPayment(incomePayment)).State = EntityState.Modified;
                 db.SaveChanges();
                 return RedirectToAction("Details", new { id = incomePayment.Income.ID });
             }
@@ -201,7 +235,6 @@ namespace MyFinances.Controllers
 
                 db.Entry(ip).State = EntityState.Modified;
                 db.SaveChanges();
-                db.SaveChanges();
                 return RedirectToAction("Details", new { id = ip.Income.ID });
             }
             return View("Payment", incomePayment);
@@ -218,6 +251,21 @@ namespace MyFinances.Controllers
             db.IncomePayments.Remove(incomePayment);
             db.SaveChanges();
             return RedirectToAction("Details", new { id = income.ID });
+        }
+
+        private Income SaveIncomeForNextPayment (IncomePayment incomePayment)
+        {
+            Income income = incomePayment.Income.Populate(user);
+            if (income.Date == incomePayment.Date)
+            {
+                income.Date = income.GetNextDate(incomePayment.Date);
+            }
+            else if (income.SecondDate == incomePayment.Date)
+            {
+                income.SecondDate = income.GetNextSecondDate(incomePayment.Date);
+            }
+
+            return income;
         }
     }
 }

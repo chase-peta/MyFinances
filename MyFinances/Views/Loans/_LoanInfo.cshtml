@@ -1,97 +1,95 @@
 ﻿@model MyFinances.Models.Loan
 
-<div class="col-xs-12 col-sm-6 col-md-12">
-    @if (ViewBag.Action != "Create" || ViewBag.Calculate)
+@if (ViewBag.Action != "Create" || ViewBag.Calculate)
+{
+    if (Model.IsShared)
     {
-        if (Model.IsShared)
-        {
-            <h2>Shared With</h2>
-            <div class="tab-content margin-bottom-20">
-                <div class="table-container">
-                    <table class="table table-striped">
-                        <tbody>
-                            @if (Model.SharedWith.Any())
-                            {
-                                if (Model.NotOwner)
-                                {
-                                    <tr>
-                                        <th>@Model.User.FirstName @Model.User.LastName</th>
-                                        <td>@Html.DisplayFor(model => model.SharedMonthlyPayment)</td>
-                                    </tr>
-                                }
-                                foreach (var item in Model.SharedWith)
-                                {
-                                    if (item.SharedWithUser.Id != ViewBag.User.Id)
-                                    {
-                                        <tr>
-                                            <th>@item.SharedWithUser.FirstName @item.SharedWithUser.LastName</th>
-                                            <td>@Html.DisplayFor(model => model.SharedMonthlyPayment)</td>
-                                        </tr>
-                                    }
-                                }
-                            }
-                            <tr>
-                                <th>You Pay</th>
-                                <td>@Html.DisplayFor(model => model.SharedMonthlyPayment)</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        }
-
-        <h2>Payment Info</h2>
+        <h2>Shared With</h2>
         <div class="tab-content margin-bottom-20">
-            <div class="table-container alert-success">
+            <div class="table-container">
                 <table class="table table-striped">
                     <tbody>
+                        @if (Model.SharedWith.Any())
+                        {
+                            if (Model.NotOwner)
+                            {
+                                <tr>
+                                    <th>@Model.User.FirstName @Model.User.LastName</th>
+                                    <td>@Html.DisplayFor(model => model.OwnerPays)</td>
+                                </tr>
+                            }
+                            foreach (var item in Model.SharedWith)
+                            {
+                                if (item.SharedWithUser.Id != ViewBag.User.Id)
+                                {
+                                    <tr>
+                                        <th>@item.SharedWithUser.FirstName @item.SharedWithUser.LastName</th>
+                                        <td>@Html.DisplayFor(model => item.Amount)</td>
+                                    </tr>
+                                }
+                            }
+                        }
                         <tr>
-                            <th>@Html.DisplayNameFor(model => model.Principal)</th>
-                            <td>@Html.DisplayFor(model => model.Principal)</td>
-                        </tr>
-                        <tr>
-                            <th>@Html.DisplayNameFor(model => model.MonthlyPayment)</th>
-                            <td>@Html.DisplayFor(model => model.MonthlyPayment)</td>
-                        </tr>
-                        <tr>
-                            <th>@Html.DisplayNameFor(model => model.PaymentsRemaining)</th>
-                            <td>@Html.DisplayFor(model => model.PaymentsRemaining)</td>
+                            <th>@Html.DisplayNameFor(model => model.YouPay)</th>
+                            <td>@Html.DisplayFor(model => model.YouPay)</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+    }
 
-        if (ViewBag.Action != "Create")
+    <h2>Payment Info</h2>
+    <div class="tab-content margin-bottom-20">
+        <div class="table-container alert-success">
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.Principal)</th>
+                        <td>@Html.DisplayFor(model => model.Principal)</td>
+                    </tr>
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.MonthlyPayment)</th>
+                        <td>@Html.DisplayFor(model => model.MonthlyPayment)</td>
+                    </tr>
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.PaymentsRemaining)</th>
+                        <td>@Html.DisplayFor(model => model.PaymentsRemaining)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    if (ViewBag.Action != "Create")
+    {
+        if (Model.LoanPayments != null && Model.LoanPayments.Any())
         {
-            if (Model.LoanPayments != null && Model.LoanPayments.Any())
+            if (Model.IsActive)
             {
-                if (Model.IsActive)
-                {
-                    <h2>Last Payment</h2>
-                    <div class="tab-content margin-bottom-20">
-                        <div class="table-container alert-success">
-                            <table class="table table-striped">
-                                <tbody>
-                                    <tr>
-                                        <th>@Html.DisplayNameFor(model => model.LastPaymentDate)</th>
-                                        <td>@Html.DisplayFor(model => model.LastPaymentDate)</td>
-                                    </tr>
-                                    <tr>
-                                        <th>@Html.DisplayNameFor(model => model.LastPaymentAmount)</th>
-                                        <td>@Html.DisplayFor(model => model.LastPaymentAmount)</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <h2>Last Payment</h2>
+                <div class="tab-content margin-bottom-20">
+                    <div class="table-container alert-success">
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(model => model.LastPaymentDate)</th>
+                                    <td>@Html.DisplayFor(model => model.LastPaymentDate)</td>
+                                </tr>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(model => model.LastPaymentAmount)</th>
+                                    <td>@Html.DisplayFor(model => model.LastPaymentAmount)</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                }
-            }
-            else
-            {
-                <p class="alert alert-warning">There are currently no payments for this loan.</p>
+                </div>
             }
         }
+        else
+        {
+            <p class="alert alert-warning">There are currently no payments for this loan.</p>
+        }
     }
-</div>
+}
 

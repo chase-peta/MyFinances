@@ -40,6 +40,118 @@
     <main>
         <div class="container-fluid">
             @RenderBody()
+            @{ 
+                bool section1 = IsSectionDefined("Section1");
+                bool section2 = IsSectionDefined("Section2");
+                bool section3 = IsSectionDefined("Section3");
+                bool form = IsSectionDefined("Form");
+                bool payees = IsSectionDefined("Payees");
+                bool bills = IsSectionDefined("Bills");
+                bool loans = IsSectionDefined("Loans");
+                bool belowForm = IsSectionDefined("BelowForm");
+            }
+
+            @if (section1 || form || section2 || section3)
+            {
+                <div class="row">
+                    <div class="col-xs-12 col-md-4">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-6 col-md-12">
+                                @if (section1)
+                                {
+                                    @RenderSection("Section1", required: false)
+                                }
+                                @if (form && (bills || loans || payees))
+                                {
+                                    using (Html.BeginForm())
+                                    {
+                                        <div class="margin-bottom-20">
+                                            <ul class="nav nav-tabs" role="tablist">
+                                                <li role="presentation" class="active"><a href="#editForm" aria-controls="editForm" role="tab" data-toggle="tab" class="btn-md">Edit Form</a></li>
+                                                @if (payees)
+                                                {
+                                                    <li role="presentation"><a href="#payees" aria-controls="payees" role="tab" data-toggle="tab" class="btn-md">Payees</a></li>
+                                                }
+                                                @if (bills)
+                                                {
+                                                    <li role="presentation"><a href="#bills" aria-controls="bills" role="tab" data-toggle="tab" class="btn-md">Bills</a></li>
+                                                }
+                                                @if (loans)
+                                                {
+                                                    <li role="presentation"><a href="#loans" aria-controls="loans" role="tab" data-toggle="tab" class="btn-md">Loans</a></li>
+                                                }
+                                            </ul>
+                                            <div class="tab-content">
+                                                <div role="tabpanel" class="tab-pane fade in active" id="editForm">
+                                                    @RenderSection("Form", required: false)
+                                                </div>
+
+                                                @if (payees)
+                                                {
+                                                    <div role="tabpanel" class="tab-pane fade" id="payees">
+                                                        @RenderSection("Payees", required: false)
+                                                    </div>
+                                                }
+                                                @if (bills)
+                                                {
+                                                    <div role="tabpanel" class="tab-pane fade" id="bills">
+                                                        @RenderSection("Bills", required: false)
+                                                    </div>
+                                                }
+                                                @if (loans)
+                                                {
+                                                    <div role="tabpanel" class="tab-pane fade" id="loans">
+                                                        @RenderSection("Loans", required: false)
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        if (belowForm)
+                                        {
+                                            <div class="margin-bottom-20">
+                                                @RenderSection("BelowForm", required: false)
+                                                <div class="clearfix"></div>
+                                            </div>
+                                        }
+                                    }
+                                }
+                                else if (form)
+                                {
+                                    using (Html.BeginForm())
+                                    {
+                                        <div class="tab-content margin-bottom-20">
+                                            @RenderSection("Form", required: false)
+                                        </div>
+
+                                        if (belowForm)
+                                        {
+                                            <div class="margin-bottom-20">
+                                                @RenderSection("BelowForm", required: false)
+                                                <div class="clearfix"></div>
+                                            </div>
+                                        }
+                                    }
+                                }
+                                @if (belowForm && !form)
+                                {
+                                    <div class="margin-bottom-20">
+                                        @RenderSection("BelowForm", required: false)
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="col-xs-12 col-sm-6 col-md-12">
+                                @RenderSection("Section2", required: false)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-md-8">
+                        @RenderSection("Section3", required: false)
+                    </div>
+                </div>
+            }
         </div>
     </main>
 

@@ -29,7 +29,6 @@ namespace MyFinances.Models
         public string FirstName { get; set; }
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
-        
         [Display(Name = "First Date"), DataType(DataType.Date), DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true), Required]
         public DateTime FirstDate { get; set; }
 
@@ -42,7 +41,8 @@ namespace MyFinances.Models
         [Display(Name = "Second Paycheck"), Column(TypeName = "money"), DataType(DataType.Currency), Required]
         public decimal SecondPaycheck { get; set; }
 
-        //public Income PrimaryIncome { get; set; }
+        [NotMapped]
+        public Income PrimaryIncome { get; set; }
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
@@ -61,6 +61,9 @@ namespace MyFinances.Models
         public DbSet<SharedLoanPayment> SharedLoanPayment { get; set; }
         public DbSet<Income> Incomes { get; set; }
         public DbSet<IncomePayment> IncomePayments { get; set; }
+        public DbSet<IncomeUser> IncomeUsers { get; set; }
+        public DbSet<IncomeUserPayment> IncomeUserPayments { get; set; }
+        public DbSet<PrimaryIncome> PrimaryIncome { get; set; }
 
         protected override void OnModelCreating (DbModelBuilder modelBuilder)
         {
@@ -212,11 +215,19 @@ namespace MyFinances.Models
         public int ID { get; set; }
 
         public virtual ApplicationUser SharedWithUser { get; set; }
+
+        [Display(Name = "%")]
+        public SharedPercentage SharedPercentage { get; set; }
     }
 
     public enum PaymentFrequency
     {
         Weekly, BiWeekly, SemiMonthly, Monthly, BiMonthly, SemiYearly, Yearly
+    }
+
+    public enum SharedPercentage
+    {
+        Fourth = 25, Third = 33, Half = 50, TwoThirds = 66, ThreeFourths = 75
     }
 
     public enum InterestCompound

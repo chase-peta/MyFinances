@@ -19,7 +19,7 @@ namespace MyFinances.Models
         public int EndYear { get; set; }
     }
 
-    public class DashboardItem
+    public class DashboardItem : BaseDashboardItem
     {
         public DashboardItem () { }
 
@@ -30,7 +30,7 @@ namespace MyFinances.Models
             Date = bill.DueDate;
             Amount = bill.Amount;
             IsShared = bill.IsShared;
-            SharedAmount = bill.SharedAmount;
+            YouPay = bill.YouPay;
             NotOwner = bill.NotOwner;
             if (bill.IsShared && bill.SharedWith.Any())
             {
@@ -47,7 +47,7 @@ namespace MyFinances.Models
             Date = payment.DatePaid;
             Amount = payment.Amount;
             IsShared = payment.Bill.IsShared;
-            SharedAmount = payment.SharedAmount;
+            YouPay = payment.YouPay;
             NotOwner = payment.User.Id != user.Id;
             if (payment.SharedWith.Any())
             {
@@ -72,7 +72,7 @@ namespace MyFinances.Models
             Name = payment.Loan.Name;
             Date = payment.DatePaid;
             Amount = payment.Payment;
-            SharedAmount = payment.SharedAmount;
+            YouPay = payment.YouPay;
             IsShared = payment.Loan.IsShared;
             NotOwner = payment.User.Id != user.Id;
             if (payment.SharedWith.Any())
@@ -89,7 +89,7 @@ namespace MyFinances.Models
             Name = outlook.Loan.Name;
             Date = outlook.Date;
             Amount = outlook.Payment;
-            SharedAmount = outlook.SharedPayment;
+            YouPay = outlook.YouPay;
             IsShared = outlook.Loan.IsShared;
             NotOwner = outlook.Loan.NotOwner;
             if (outlook.Loan.SharedWith.Any())
@@ -99,7 +99,65 @@ namespace MyFinances.Models
             Type = "Loan";
             IsPaid = false;
         }
+        
+        [Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
+        public decimal YouPay { get; set; }
 
+        public List<ApplicationUser> SharedWith { get; set; }
+
+        public bool NotOwner { get; set; }
+
+        public bool IsShared { get; set; }
+
+        public string Classes
+        {
+            get
+            {
+                if (NotOwner) return "alert-info not-owner";
+                return ItemClasses;
+            }
+        }
+    }
+
+    public class DashboardIncomeItem : BaseDashboardItem
+    {
+        public DashboardIncomeItem(Income income)
+        {
+            Id = income.ID;
+            Name = income.Name;
+            Date = income.Date;
+            Amount = income.Amount;
+            Type = "Income";
+            IsPaid = false;
+        }
+
+        public DashboardIncomeItem(DateTime date, decimal paycheck)
+        {
+            Name = "Paycheck";
+            Date = date;
+            Amount = paycheck;
+        }
+
+        public DashboardIncomeItem(string name, DateTime date, decimal amount)
+        {
+            Name = name;
+            Date = date;
+            Amount = amount;
+        }
+
+        public DashboardIncomeItem(IncomePayment payment)
+        {
+            Id = payment.Income.ID;
+            Name = payment.Income.Name;
+            Date = payment.Date;
+            Amount = payment.Amount;
+            Type = "Income";
+            IsPaid = true;
+        }
+    }
+
+    public abstract class BaseDashboardItem
+    {
         [Display(Name = "Id")]
         public int Id { get; set; }
 
@@ -112,18 +170,11 @@ namespace MyFinances.Models
         [Display(Name = "Amount"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal Amount { get; set; }
 
-        [Display(Name = "You Pay"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedAmount { get; set; }
-
         [Display(Name = "Due In"), DisplayFormat(DataFormatString = "{0} Days")]
         public double DueInDays { get { return (Date - new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day)).TotalDays; } }
 
-        public List<ApplicationUser> SharedWith { get; set; }
-
         [Display(Name = "Paid")]
         public bool IsPaid { get; set; }
-
-        public bool NotOwner { get; set; }
 
         [Display(Name = "Due In")]
         public string DueIn
@@ -143,12 +194,10 @@ namespace MyFinances.Models
             }
         }
 
-        public string Classes
+        public string ItemClasses
         {
             get
             {
-                if (NotOwner)
-                    return "alert-info not-owner";
                 if (IsPaid || (DueInDays < 0 && !IsPastDue))
                     return "alert-success";
                 else if (IsPastDue)
@@ -161,46 +210,17 @@ namespace MyFinances.Models
         }
 
         public bool IsPastDue { get { return DueInDays < 0; } }
-
-        public bool IsShared { get; set; }
-
+        
         public string Type { get; set; }
-    }
-
-    public class DashboardIncomeItem
-    {
-        public DashboardIncomeItem(DateTime date, decimal paycheck)
-        {
-            Name = "Paycheck";
-            Date = date;
-            Amount = paycheck;
-        }
-
-        public DashboardIncomeItem(string name, DateTime date, decimal amount)
-        {
-            Name = name;
-            Date = date;
-            Amount = amount;
-        }
-
-        [Display(Name = "Name")]
-        public string Name { get; set; }
-
-        [Display(Name = "Date") DisplayFormat(DataFormatString = "{0:MMM. dd}")]
-        public DateTime Date { get; set; }
-
-        [Display(Name = "Amount") DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal Amount { get; set; }
     }
 
     public class DashboardDateRange
     {
-        public DashboardDateRange (DateTime startDate, DateTime endDate, decimal paycheck)
+        public DashboardDateRange (DateTime startDate, DateTime endDate)
         {
             StartDate = startDate;
             EndDate = endDate;
             IncomeItems = new List<DashboardIncomeItem>();
-            IncomeItems.Add(new DashboardIncomeItem(startDate, paycheck));
         }
 
         [Display(Name = "Start Date"), DisplayFormat(DataFormatString = "{0:MMM. d}")]
@@ -210,19 +230,21 @@ namespace MyFinances.Models
         public DateTime EndDate { get; set; }
 
         [Display(Name = "Total"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal Total { get { return Items.Sum(x => x.Amount); } }
+        public decimal Total { get { return (CheckItems ? Items.Sum(x => x.Amount) : 0.0M); } }
 
         [Display(Name = "Total"), DisplayFormat(DataFormatString = "{0:c}")]
         public decimal IncomeTotal { get { return IncomeItems.Sum(x => x.Amount); } }
 
         [Display(Name = "Shared Total"), DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal NotOwnerTotal { get { return Items.Where(x => x.NotOwner).Sum(x => x.SharedAmount); } }
+        public decimal NotOwnerTotal { get { return (CheckItems ? Items.Where(x => x.NotOwner).Sum(x => x.YouPay) : 0.0M); } }
 
         [DisplayFormat(DataFormatString = "{0:c}")]
-        public decimal SharedTotal { get { return Items.Sum(x => x.SharedAmount); } }
+        public decimal SharedTotal { get { return (CheckItems ? Items.Sum(x => x.YouPay) : 0.0M); } }
         
         public IEnumerable<DashboardItem> Items { get; set; }
 
         public List<DashboardIncomeItem> IncomeItems { get; set; }
+
+        private bool CheckItems { get { return (Items != null && Items.Any()); } }
     }
 }

@@ -1,6 +1,6 @@
 ﻿@model MyFinances.Models.IncomePayment
 
-@{ ViewBag.Title = ViewBag.Action + " - " + Model.Income.Name + " Bill"; }
+@{ ViewBag.Title = ViewBag.Action + " - " + Model.Income.Name + " Income"; }
 
 <div class="clear-after">
     <div class="pull-right">
@@ -9,55 +9,50 @@
     <h1>@ViewBag.Title</h1>
 </div>
 
-<div class="row">
-    <div class="col-xs-12 col-md-4">
-        <div class="row">
-            <div class="col-xs-12 col-sm-6 col-md-12">
-                <div class="update-form margin-bottom-20 alert-info">
-                    @using (Html.BeginForm())
-                    {
-                        @Html.AntiForgeryToken()
-                        @Html.ValidationSummary(true)
-                        @Html.HiddenFor(model => model.ID)
-                        <input type="hidden" name="billPaymentId" id="billPaymentId" value="@Model.ID" />
-                        
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Date, new { htmlAttributes = new { @class = "control-label" } })
-                            @Html.EditorFor(model => model.Date, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.Date)
-                        </div>
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Amount, new { htmlAttributes = new { @class = "control-label" } })
-                            @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.Amount)
-                        </div>
+@section Form {
+    @Html.HiddenFor(model => model.ID)
+    <input type="hidden" name="incomePaymentId" id="incomePaymentId" value="@Model.ID" />
 
-                        <div class="form-group text-center">
-                            <input type="submit" value="Save" class="btn btn-primary" />
-                        </div>
-                    }
-                </div>
+    <div class="update-form alert-info">
 
-                @if (ViewBag.Action == "Edit Payment")
-                {
-                    <div class="margin-bottom-20">
-                        @Html.ActionLink("Delete Payment", "DeletePayment", new { id = Model.ID }, new
-                        {
-                            @class = "btn btn-danger confirmation",
-                            data_confirm_title = "Delete this payment for " + Model.Income.Name + " Income",
-                            data_confirm_message = "Are you sure you want to delete this payment for " + Model.Income.Name + " Income?",
-                            data_confirm_style = "danger",
-                            data_toggle = "tooltip",
-                            data_placement = "right",
-                            title = "This will delete this 1 payment."
-                        })
-                    </div>
-                }
-            </div>
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true)
 
-            @Html.Partial("_IncomeInfo", Model.Income)
+        <div class="form-group">
+            @Html.LabelFor(model => model.Date, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Date, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Date)
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Amount, new { htmlAttributes = new { @class = "control-label" } })
+            @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Amount)
         </div>
     </div>
+}
 
+@section BelowForm {
+    <input type="submit" value="Save" class="btn btn-primary pull-right" />
+
+    @if (ViewBag.Action == "Edit Payment")
+    {
+        @Html.ActionLink("Delete Payment", "DeletePayment", new { id = Model.ID }, new
+        {
+            @class = "btn btn-danger confirmation",
+            data_confirm_title = "Delete this payment for " + Model.Income.Name + " Income",
+            data_confirm_message = "Are you sure you want to delete this payment for " + Model.Income.Name + " Income?",
+            data_confirm_style = "danger",
+            data_toggle = "tooltip",
+            data_placement = "right",
+            title = "This will delete this 1 payment."
+        })
+    }
+}
+
+@section Section2 {
+    @Html.Partial("_IncomeInfo", Model.Income)
+}
+
+@section Section3 {
     @Html.Partial("_PaymentAverage", Model.Income)
-</div>
+}
